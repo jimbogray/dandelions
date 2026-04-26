@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dandelion Game</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #d0e8f2;
+      font-family: sans-serif;
+    }
+
+    h1 {
+      color: #1a4a6e;
+      margin-bottom: 24px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(5, 100px);
+      grid-template-rows: repeat(5, 100px);
+      gap: 6px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: #a8d0e8;
+      border: 2px solid #5a9abf;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .cell:hover {
+      background: #8bbfd8;
+    }
+
+    .cell.has-dandelion {
+      background: #d8f0d8;
+      cursor: default;
+    }
+
+    .cell.has-dandelion:hover {
+      background: #d8f0d8;
+    }
+
+    .cell.has-seed {
+      background: #f5f0d8;
+      cursor: default;
+    }
+
+    .cell.has-seed:hover {
+      background: #f5f0d8;
+    }
+
+    .dandelion-icon, .seed-icon {
+      width: 72px;
+      height: 72px;
+      pointer-events: none;
+      animation: float-in 0.25s ease-out;
+    }
+
+    @keyframes float-in {
+      from { opacity: 0; transform: scale(0.4) rotate(-20deg); }
+      to   { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    /* Layout: board + compass side by side */
+    #game-area {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+    }
+
+    /* Compass */
+    #compass-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #compass-wrap h2 {
+      color: #1a4a6e;
+      font-size: 1rem;
+      margin: 0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    #compass {
+      width: 200px;
+      height: 200px;
+    }
+
+    /* Each compass arrow group */
+    .compass-arrow {
+      cursor: pointer;
+    }
+
+    .compass-arrow .spoke {
+      stroke: #2a6a9a;
+      stroke-width: 2;
+      transition: stroke 0.15s;
+    }
+
+    .compass-arrow .arrowhead {
+      fill: #2a6a9a;
+      transition: fill 0.15s;
+    }
+
+    .compass-arrow:hover .spoke,
+    .compass-arrow.active .spoke {
+      stroke: #c8a820;
+    }
+
+    .compass-arrow:hover .arrowhead,
+    .compass-arrow.active .arrowhead {
+      fill: #c8a820;
+    }
+
+    /* Already-used compass directions */
+    .compass-arrow.used {
+      cursor: not-allowed;
+    }
+
+    .compass-arrow.used .spoke {
+      stroke: #b0b0b0;
+      stroke-dasharray: 4 3;
+    }
+
+    .compass-arrow.used .arrowhead {
+      fill: #b0b0b0;
+    }
+
+    .compass-arrow.used:hover .spoke {
+      stroke: #b0b0b0;
+    }
+
+    .compass-arrow.used:hover .arrowhead {
+      fill: #b0b0b0;
+    }
+
+    #wind-label {
+      font-size: 0.95rem;
+      color: #1a4a6e;
+      font-weight: bold;
+      min-height: 1.4em;
+    }
+
+    #reset-btn {
+      margin-top: 16px;
+      padding: 8px 24px;
+      background: #e57373;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #reset-btn:hover {
+      background: #c62828;
+    }
+
+    #objective-label, #objective-label-wind {
+      margin-top: 8px;
+      color: #1a4a6e;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    /* Turn status bar */
+    #status-bar {
+      margin-bottom: 18px;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      background: #fff9c4;
+      border: 2px solid #c8a820;
+      color: #3a5a2a;
+      text-align: center;
+      min-width: 320px;
+    }
+
+    #status-bar.wind-turn {
+      background: #bbdefb;
+      border-color: #1976d2;
+      color: #0d3c6e;
+    }
+
+    #status-bar.game-over {
+      background: #ffccbc;
+      border-color: #e64a19;
+      color: #7f1a00;
+    }
+
+    /* Disabled states */
+    #board.disabled .cell:not(.has-dandelion):not(.has-seed) {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    #compass.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dandelion Board</h1>
+  <div id="status-bar">Turn 1 of 7 &mdash; 🌼 Dandelion player: place a dandelion</div>
+  <div id="game-area">
+    <div id="board"></div>
+    <div id="compass-wrap">
+      <h2>Wind</h2>
+      <svg id="compass" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer ring -->
+        <circle cx="100" cy="100" r="88" fill="#b8d8ee" stroke="#5a9abf" stroke-width="2"/>
+        <!-- Centre dot -->
+        <circle cx="100" cy="100" r="6" fill="#3a5a2a"/>
+      </svg>
+      <div id="wind-label">No wind</div>
+      <button id="reset-btn">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const statusBar = document.getElementById('status-bar');
+    const windLabel = document.getElementById('wind-label');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // ── Turn state ───────────────────────────────────────────────
+    const MAX_ROUNDS = 7;
+    let round = 1;        // 1-based round number
+    let phase = 'dandelion'; // 'dandelion' or 'wind' within the round
+    let gameOver = false;
+    let winner = null;    // 'wind' or 'dandelion'
+
+    function currentPhase() {
+      return phase;
+    }
+
+    function isBoardFull() {
+      return [...board.children].every(
+        c => c.classList.contains('has-dandelion') || c.classList.contains('has-seed')
+      );
+    }
+
+    function updateStatus() {
+      statusBar.className = '';
+      if (gameOver) {
+        statusBar.classList.add('game-over');
+        if (winner === 'wind') {
+          statusBar.innerHTML = '💨 Wind wins! Free squares remain after turn 7!';
+        } else {
+          statusBar.innerHTML = '🌼 Dandelion wins! The board is full!';
+        }
+        board.classList.add('disabled');
+        compass.classList.add('disabled');
+        return;
+      }
+      if (phase === 'dandelion') {
+        statusBar.classList.remove('wind-turn');
+        statusBar.innerHTML = `Turn ${round} of ${MAX_ROUNDS} &mdash; 🌼 Dandelion player: place a dandelion`;
+        board.classList.remove('disabled');
+        compass.classList.add('disabled');
+      } else {
+        statusBar.classList.add('wind-turn');
+        statusBar.innerHTML = `Turn ${round} of ${MAX_ROUNDS} &mdash; 💨 Wind player: choose a direction`;
+        board.classList.add('disabled');
+        compass.classList.remove('disabled');
+      }
+    }
+
+    function advanceTurn() {
+      if (phase === 'dandelion') {
+        // Dandelion just moved — now it's wind's turn (same round)
+        // Check if board is already full after dandelion placed
+        if (isBoardFull()) {
+          gameOver = true;
+          winner = 'dandelion';
+        } else {
+          phase = 'wind';
+        }
+      } else {
+        // Wind just moved — round complete
+        if (isBoardFull()) {
+          gameOver = true;
+          winner = 'dandelion';
+        } else {
+          round++;
+          phase = 'dandelion';
+          if (round > MAX_ROUNDS) {
+            gameOver = true;
+            winner = 'wind';
+          }
+        }
+      }
+      updateStatus();
+    }
+
+    // ── Build 5x5 grid ───────────────────────────────────────────
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.addEventListener('click', function () {
+        if (gameOver) return;
+        if (currentPhase() !== 'dandelion') return;
+        if (this.classList.contains('has-dandelion') || this.classList.contains('has-seed')) return;
+        this.classList.add('has-dandelion');
+        this.appendChild(makeDandelion());
+        advanceTurn();
+      });
+      board.appendChild(cell);
+    }
+
+    // ── Compass ──────────────────────────────────────────────────
+    const compass = document.getElementById('compass');
+    const ns = 'http://www.w3.org/2000/svg';
+
+    const directions = [
+      { label: 'N',  angle: -90 },
+      { label: 'NE', angle: -45 },
+      { label: 'E',  angle:   0 },
+      { label: 'SE', angle:  45 },
+      { label: 'S',  angle:  90 },
+      { label: 'SW', angle: 135 },
+      { label: 'W',  angle: 180 },
+      { label: 'NW', angle: 225 },
+    ];
+
+    const cx = 100, cy = 100;
+    const spokeStart = 12;  // px from centre before spoke begins
+    const spokeEnd   = 72;  // px from centre where arrowhead starts
+    const headLen    = 14;  // arrowhead length
+    const headHalf   = 6;   // arrowhead half-width
+    // label ring radius
+    const labelR     = 90;
+
+    directions.forEach(dir => {
+      const rad = dir.angle * Math.PI / 180;
+
+      // Spoke start & end points
+      const x1 = cx + spokeStart * Math.cos(rad);
+      const y1 = cy + spokeStart * Math.sin(rad);
+      const x2 = cx + spokeEnd   * Math.cos(rad);
+      const y2 = cy + spokeEnd   * Math.sin(rad);
+
+      // Arrowhead tip
+      const tx = cx + (spokeEnd + headLen) * Math.cos(rad);
+      const ty = cy + (spokeEnd + headLen) * Math.sin(rad);
+
+      // Arrowhead base corners (perpendicular to spoke)
+      const perp = rad + Math.PI / 2;
+      const bx1 = x2 + headHalf * Math.cos(perp);
+      const by1 = y2 + headHalf * Math.sin(perp);
+      const bx2 = x2 - headHalf * Math.cos(perp);
+      const by2 = y2 - headHalf * Math.sin(perp);
+
+      // Label position (just outside the arrowhead)
+      const lx = cx + labelR * Math.cos(rad);
+      const ly = cy + labelR * Math.sin(rad);
+
+      // Group
+      const g = document.createElementNS(ns, 'g');
+      g.classList.add('compass-arrow');
+      g.setAttribute('data-dir', dir.label);
+
+      // Spoke line
+      const line = document.createElementNS(ns, 'line');
+      line.classList.add('spoke');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+      g.appendChild(line);
+
+      // Arrowhead polygon
+      const poly = document.createElementNS(ns, 'polygon');
+      poly.classList.add('arrowhead');
+      poly.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
+      g.appendChild(poly);
+
+      // Invisible hit-area circle at arrowhead for easier clicking
+      const hit = document.createElementNS(ns, 'circle');
+      hit.setAttribute('cx', tx);
+      hit.setAttribute('cy', ty);
+      hit.setAttribute('r', 10);
+      hit.setAttribute('fill', 'transparent');
+      g.appendChild(hit);
+
+      // Direction label text
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', lx);
+      text.setAttribute('y', ly);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'central');
+      text.setAttribute('font-size', '11');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('fill', '#3a5a2a');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = dir.label;
+      g.appendChild(text);
+
+      // Click handler
+      g.addEventListener('click', () => {
+        if (gameOver) return;
+        if (currentPhase() !== 'wind') return;
+        if (g.classList.contains('used')) return;
+        // Each wind turn: one direction click spreads and ends the turn
+        g.classList.add('active');
+        windLabel.textContent = `Wind: ${dir.label}`;
+        spreadSeeds(dir.label);
+        // Brief highlight then mark as used and advance
+        setTimeout(() => {
+          g.classList.remove('active');
+          g.classList.add('used');
+          windLabel.textContent = 'No wind';
+          advanceTurn();
+        }, 600);
+      });
+
+      compass.appendChild(g);
+    });
+
+    // ── Initial state ─────────────────────────────────────────────
+    updateStatus();
+
+    // ── Reset ─────────────────────────────────────────────────────
+    function resetGame() {
+      // Clear board cells
+      [...board.children].forEach(cell => {
+        cell.classList.remove('has-dandelion', 'has-seed');
+        while (cell.firstChild) cell.removeChild(cell.firstChild);
+      });
+      // Reset compass
+      [...compass.querySelectorAll('.compass-arrow.active, .compass-arrow.used')].forEach(g => g.classList.remove('active', 'used'));
+      windLabel.textContent = 'No wind';
+      // Reset state
+      round = 1;
+      phase = 'dandelion';
+      gameOver = false;
+      winner = null;
+      updateStatus();
+    }
+
+    resetBtn.addEventListener('click', resetGame);
+
+    // ── Wind spreading ───────────────────────────────────────────
+    const dirVectors = {
+      'N':  { dr: -1, dc:  0 },
+      'NE': { dr: -1, dc:  1 },
+      'E':  { dr:  0, dc:  1 },
+      'SE': { dr:  1, dc:  1 },
+      'S':  { dr:  1, dc:  0 },
+      'SW': { dr:  1, dc: -1 },
+      'W':  { dr:  0, dc: -1 },
+      'NW': { dr: -1, dc: -1 },
+    };
+
+    function getCell(row, col) {
+      if (row < 0 || row > 4 || col < 0 || col > 4) return null;
+      return board.children[row * 5 + col];
+    }
+
+    function spreadSeeds(dirLabel) {
+      const { dr, dc } = dirVectors[dirLabel];
+      const cells = [...board.children];
+
+      // Only dandelions (player-placed) spread seeds — snapshot before spreading
+      const hasDandelion = cells.map(c => c.classList.contains('has-dandelion'));
+
+      hasDandelion.forEach((occupied, idx) => {
+        if (!occupied) return;
+        const startRow = Math.floor(idx / 5);
+        const startCol = idx % 5;
+
+        let r = startRow + dr;
+        let c = startCol + dc;
+        while (r >= 0 && r <= 4 && c >= 0 && c <= 4) {
+          const cell = getCell(r, c);
+          if (cell && !cell.classList.contains('has-dandelion') && !cell.classList.contains('has-seed')) {
+            cell.classList.add('has-seed');
+            cell.appendChild(makeWindSeed());
+          }
+          r += dr;
+          c += dc;
+        }
+      });
+    }
+
+    // ── Icons ─────────────────────────────────────────────────────
+
+    // Dandelion puffball (player-placed)
+    function makeDandelion() {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 72 72');
+      svg.classList.add('dandelion-icon');
+
+      const dcx = 36, dcy = 36;
+      const spokeCount = 12;
+      const innerR = 6;
+      const spokeLen = 22;
+      const bulbR = 4;
+
+      for (let i = 0; i < spokeCount; i++) {
+        const angle = (2 * Math.PI / spokeCount) * i - Math.PI / 2;
+        const x1 = dcx + innerR * Math.cos(angle);
+        const y1 = dcy + innerR * Math.sin(angle);
+        const x2 = dcx + (innerR + spokeLen) * Math.cos(angle);
+        const y2 = dcy + (innerR + spokeLen) * Math.sin(angle);
+
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        line.setAttribute('stroke', '#9b8b2b');
+        line.setAttribute('stroke-width', '1.4');
+        svg.appendChild(line);
+
+        const circle = document.createElementNS(svgNS, 'circle');
+        circle.setAttribute('cx', x2); circle.setAttribute('cy', y2);
+        circle.setAttribute('r', bulbR);
+        circle.setAttribute('fill', '#f0e04a');
+        circle.setAttribute('stroke', '#c8a820');
+        circle.setAttribute('stroke-width', '1');
+        svg.appendChild(circle);
+      }
+
+      const centre = document.createElementNS(svgNS, 'circle');
+      centre.setAttribute('cx', dcx); centre.setAttribute('cy', dcy);
+      centre.setAttribute('r', innerR);
+      centre.setAttribute('fill', '#f0e04a');
+      centre.setAttribute('stroke', '#c8a820');
+      centre.setAttribute('stroke-width', '1.5');
+      svg.appendChild(centre);
+
+      return svg;
+    }
+
+    // Single wind-blown seed: stem + achene + wispy pappus filaments
+    function makeWindSeed() {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 72 72');
+      svg.classList.add('seed-icon');
+
+      // Stem
+      const stem = document.createElementNS(svgNS, 'line');
+      stem.setAttribute('x1', 36); stem.setAttribute('y1', 64);
+      stem.setAttribute('x2', 36); stem.setAttribute('y2', 46);
+      stem.setAttribute('stroke', '#9b8b2b');
+      stem.setAttribute('stroke-width', '1.5');
+      svg.appendChild(stem);
+
+      // Achene (seed body)
+      const achene = document.createElementNS(svgNS, 'ellipse');
+      achene.setAttribute('cx', 36); achene.setAttribute('cy', 43);
+      achene.setAttribute('rx', 3); achene.setAttribute('ry', 4.5);
+      achene.setAttribute('fill', '#b8a020');
+      svg.appendChild(achene);
+
+      // Pappus filaments fanning upward
+      const filamentCount = 9;
+      const spreadDeg = 70; // total fan spread in degrees either side of straight up
+      const filamentLen = 19;
+      const filamentBase = { x: 36, y: 39 };
+
+      for (let i = 0; i < filamentCount; i++) {
+        const t = filamentCount === 1 ? 0 : (i / (filamentCount - 1)) * 2 - 1; // -1 to +1
+        const angleDeg = -90 + t * spreadDeg; // -90 = straight up
+        const rad = angleDeg * Math.PI / 180;
+        const fx = filamentBase.x + filamentLen * Math.cos(rad);
+        const fy = filamentBase.y + filamentLen * Math.sin(rad);
+
+        const fil = document.createElementNS(svgNS, 'line');
+        fil.setAttribute('x1', filamentBase.x); fil.setAttribute('y1', filamentBase.y);
+        fil.setAttribute('x2', fx); fil.setAttribute('y2', fy);
+        fil.setAttribute('stroke', '#aaaaaa');
+        fil.setAttribute('stroke-width', '1');
+        svg.appendChild(fil);
+
+        // Tiny tip bulb
+        const tip = document.createElementNS(svgNS, 'circle');
+        tip.setAttribute('cx', fx); tip.setAttribute('cy', fy);
+        tip.setAttribute('r', 2.5);
+        tip.setAttribute('fill', '#ffffff');
+        tip.setAttribute('stroke', '#999999');
+        tip.setAttribute('stroke-width', '0.8');
+        svg.appendChild(tip);
+      }
+
+      return svg;
+    }
+  </script>
+  <p id="objective-label">🌼 Dandelion player objective: fill every square on the board before the game ends.</p>
+  <p id="objective-label-wind">💨 Wind player objective: prevent the dandelion from filling all the squares.</p>
+</body>
+</html>
