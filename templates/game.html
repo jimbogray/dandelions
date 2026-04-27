@@ -208,6 +208,27 @@
       color: #7f1a00;
     }
 
+    /* Timer */
+    #timer {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #1a4a6e;
+      margin-bottom: 12px;
+      min-width: 60px;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    #timer.urgent {
+      color: #c62828;
+      animation: pulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.45; }
+    }
+
     /* Disabled states */
     #board.disabled .cell:not(.has-dandelion):not(.has-seed) {
       cursor: not-allowed;
@@ -223,6 +244,7 @@
 <body>
   <h1>Dandelion Board</h1>
   <div id="status-bar">Turn 1 of 7 &mdash; 🌼 Dandelion player: place a dandelion</div>
+  <div id="timer">30s</div>
   <div id="game-area">
     <div id="board"></div>
     <div id="compass-wrap">
@@ -233,7 +255,6 @@
         <!-- Centre dot -->
         <circle cx="100" cy="100" r="6" fill="#3a5a2a"/>
       </svg>
-      <div id="wind-label">No wind</div>
       <button id="reset-btn">Restart Game</button>
     </div>
   </div>
@@ -241,7 +262,7 @@
   <script>
     const board = document.getElementById('board');
     const statusBar = document.getElementById('status-bar');
-    const windLabel = document.getElementById('wind-label');
+    const timerEl = document.getElementById('timer');
     const resetBtn = document.getElementById('reset-btn');
 
     // ── Turn state ───────────────────────────────────────────────
@@ -264,6 +285,8 @@
     function updateStatus() {
       statusBar.className = '';
       if (gameOver) {
+        stopTimer();
+        timerEl.textContent = '';
         statusBar.classList.add('game-over');
         if (winner === 'wind') {
           statusBar.innerHTML = '💨 Wind wins! Free squares remain after turn 7!';
@@ -284,6 +307,68 @@
         statusBar.innerHTML = `Turn ${round} of ${MAX_ROUNDS} &mdash; 💨 Wind player: choose a direction`;
         board.classList.add('disabled');
         compass.classList.remove('disabled');
+      }
+      startTimer();
+    }
+
+    // ── Timer ────────────────────────────────────────────────────
+    const TIMER_DURATION = 30;
+    let timerInterval = null;
+    let timerRemaining = TIMER_DURATION;
+
+    function updateTimerDisplay() {
+      timerEl.textContent = timerRemaining + 's';
+      if (timerRemaining <= 5) {
+        timerEl.classList.add('urgent');
+      } else {
+        timerEl.classList.remove('urgent');
+      }
+    }
+
+    function stopTimer() {
+      if (timerInterval !== null) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerRemaining = TIMER_DURATION;
+      updateTimerDisplay();
+      timerInterval = setInterval(function () {
+        timerRemaining--;
+        updateTimerDisplay();
+        if (timerRemaining <= 0) {
+          stopTimer();
+          takeRandomMove();
+        }
+      }, 1000);
+    }
+
+    function takeRandomMove() {
+      if (gameOver) return;
+      if (phase === 'dandelion') {
+        const emptyCells = [...board.children].filter(
+          c => !c.classList.contains('has-dandelion') && !c.classList.contains('has-seed')
+        );
+        if (emptyCells.length === 0) return;
+        const cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        cell.classList.add('has-dandelion');
+        cell.appendChild(makeDandelion());
+        advanceTurn();
+      } else {
+        const available = [...compass.querySelectorAll('.compass-arrow:not(.used)')];
+        if (available.length === 0) return;
+        const g = available[Math.floor(Math.random() * available.length)];
+        const dirLabel = g.getAttribute('data-dir');
+        g.classList.add('active');
+        spreadSeeds(dirLabel);
+        setTimeout(function () {
+          g.classList.remove('active');
+          g.classList.add('used');
+          advanceTurn();
+        }, 600);
       }
     }
 
@@ -422,13 +507,11 @@
         if (g.classList.contains('used')) return;
         // Each wind turn: one direction click spreads and ends the turn
         g.classList.add('active');
-        windLabel.textContent = `Wind: ${dir.label}`;
         spreadSeeds(dir.label);
         // Brief highlight then mark as used and advance
         setTimeout(() => {
           g.classList.remove('active');
           g.classList.add('used');
-          windLabel.textContent = 'No wind';
           advanceTurn();
         }, 600);
       });
@@ -448,7 +531,6 @@
       });
       // Reset compass
       [...compass.querySelectorAll('.compass-arrow.active, .compass-arrow.used')].forEach(g => g.classList.remove('active', 'used'));
-      windLabel.textContent = 'No wind';
       // Reset state
       round = 1;
       phase = 'dandelion';
