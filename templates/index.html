@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      overflow: hidden;
+      font-family: 'Lexend', sans-serif;
+    }
+
+    /* ── Screens ────────────────────────────────────────────── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      background: #d0e8f2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #screen-ttt {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #screen-ttt-settings {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    @keyframes warp-in {
+      0%   { clip-path: circle(0px at var(--ox) var(--oy));   filter: blur(0px)  brightness(1); }
+      25%  {                                                  filter: blur(22px) brightness(1.5); }
+      65%  {                                                  filter: blur(8px)  brightness(1.1); }
+      100% { clip-path: circle(150% at var(--ox) var(--oy)); filter: blur(0px)  brightness(1); }
+    }
+
+    @keyframes warp-out {
+      0%   { clip-path: circle(150% at var(--ox) var(--oy)); filter: blur(0px)  brightness(1); }
+      25%  {                                                 filter: blur(22px) brightness(1.5); }
+      65%  {                                                 filter: blur(8px)  brightness(1.1); }
+      100% { clip-path: circle(0px at var(--ox) var(--oy)); filter: blur(0px)  brightness(1); }
+    }
+
+    /* ── Settings gear ──────────────────────────────────────── */
+    .settings-btn {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #1a4a6e;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.15s, transform 0.3s;
+      line-height: 0;
+      z-index: 10;
+    }
+
+    .settings-btn:hover {
+      background: rgba(26, 74, 110, 0.1);
+      transform: rotate(45deg);
+    }
+
+    #btn-game-back:hover {
+      transform: none;
+    }
+
+    #btn-oth-game-back:hover {
+      transform: none;
+    }
+
+    #btn-dand-game-back:hover {
+      transform: none;
+    }
+
+    /* ── Main menu ──────────────────────────────────────────── */
+    #menu-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .menu-deco-piece {
+      position: absolute;
+      color: #1a4a6e;
+      font-family: serif;
+      line-height: 1;
+    }
+
+    #screen-menu h1 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 56px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── Shared game buttons ────────────────────────────────── */
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 360px;
+      padding: 0 16px;
+    }
+
+    .game-btn {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1a4a6e;
+      background: #ffffff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 18px 24px;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.03em;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    .game-btn:hover {
+      background: #e8f4fc;
+      border-color: #1a4a6e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(26, 74, 110, 0.15);
+    }
+
+    .game-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    /* ── TTT screen layout ──────────────────────────────────── */
+    #ttt-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      /* Centered over the full screen */
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #ttt-left > * {
+      pointer-events: auto;
+    }
+
+    #ttt-left h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── TTT Settings screen ───────────────────────────────── */
+    #ttt-settings-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      width: 100%;
+      max-width: 420px;
+      padding: 0 24px;
+    }
+
+    #ttt-settings-inner h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    .setting-row {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .setting-label {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a4a6e;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .setting-label .sym {
+      display: inline-block;
+      font-size: 1.15rem;
+      font-weight: 800;
+      width: 1.1em;
+      text-align: center;
+      vertical-align: middle;
+      line-height: 1;
+    }
+
+    /* Toggle */
+    #first-player-toggle {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a4a6e;
+      background: #ffffff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 14px 24px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    #first-player-toggle:hover {
+      background: #e8f4fc;
+      border-color: #1a4a6e;
+    }
+
+    /* Color sliders */
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .color-preview {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2.5px solid #5a9abf;
+      flex-shrink: 0;
+    }
+
+    input[type=range].hue-slider {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 10px;
+      border-radius: 6px;
+      background: linear-gradient(to right,
+        hsl(0,80%,55%), hsl(45,80%,55%), hsl(90,80%,55%),
+        hsl(135,80%,55%), hsl(180,80%,55%), hsl(225,80%,55%),
+        hsl(270,80%,55%), hsl(315,80%,55%), hsl(360,80%,55%));
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range].hue-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #1a4a6e;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Time slider */
+    input[type=range].time-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 10px;
+      border-radius: 6px;
+      background: #a8d0e8;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range].time-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #1a4a6e;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .time-value {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a4a6e;
+      text-align: center;
+      min-height: 1.4em;
+    }
+    #ttt-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .deco-board {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      opacity: 0.18;
+    }
+
+    .deco-cell {
+      border: 2px solid #1a4a6e;
+    }
+
+    .deco-cell:nth-child(1), .deco-cell:nth-child(2), .deco-cell:nth-child(3) { border-top: none; }
+    .deco-cell:nth-child(7), .deco-cell:nth-child(8), .deco-cell:nth-child(9) { border-bottom: none; }
+    .deco-cell:nth-child(1), .deco-cell:nth-child(4), .deco-cell:nth-child(7) { border-left: none; }
+    .deco-cell:nth-child(3), .deco-cell:nth-child(6), .deco-cell:nth-child(9) { border-right: none; }
+
+    /* ── TTT Game Screen ─────────────────────────────────────── */
+    #screen-ttt-game {
+      clip-path: circle(0px at 50% 50%);
+      gap: 16px;
+    }
+
+    /* ── Othello Screen ───────────────────────────────────────── */
+    #screen-othello {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #screen-othello-settings {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    /* ── Dandelions Lobby Screen ───────────────────────────── */
+    #screen-dandelions {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #dandelions-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      user-select: none;
+      overflow: hidden;
+      font-size: clamp(2rem, 5vw, 4rem);
+    }
+
+    .dand-deco-seed {
+      position: absolute;
+      opacity: 0.18;
+      line-height: 1;
+    }
+
+    #dandelions-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #dandelions-left > * { pointer-events: auto; }
+
+    #dandelions-left h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    #btn-play-dandelions {
+      font-size: 0.78rem;
+      padding: 10px 18px;
+      opacity: 0.7;
+    }
+
+    /* ── Style picker (3-option button group) ─────────────────── */
+    .style-picker {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .style-opt {
+      flex: 1;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #1a4a6e;
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 12px 0;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    .style-opt:hover {
+      background: #e8f4fc;
+      border-color: #1a4a6e;
+    }
+
+    .style-opt.selected {
+      background: #1a4a6e;
+      border-color: #1a4a6e;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(26, 74, 110, 0.25);
+    }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex;
+      width: 100%;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .mode-opt {
+      flex: 1;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a4a6e;
+      background: #fff;
+      border: none;
+      padding: 14px 8px;
+      cursor: pointer;
+      text-align: center;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mode-opt + .mode-opt {
+      border-left: 2.5px solid #5a9abf;
+    }
+
+    .mode-opt:hover {
+      background: #e8f4fc;
+    }
+
+    .mode-opt.selected {
+      background: #1a4a6e;
+      color: #fff;
+    }
+
+    #screen-dandelions-settings {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    /* ── Dandelions Game Screen ─────────────────────────────── */
+    #screen-dand-game {
+      clip-path: circle(0px at 50% 50%);
+      gap: 0;
+    }
+
+    #dand-game-layout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(24px, 4vw, 56px);
+      width: 100%;
+      padding: 0 16px;
+    }
+
+    /* Board */
+    #dand-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      width: min(52vw, 52vh);
+      height: min(52vw, 52vh);
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .dand-cell {
+      background: #a8d0e8;
+      border: 2px solid #5a9abf;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+      position: relative;
+      overflow: visible;
+    }
+
+    .dand-cell:hover:not(.occupied) {
+      background: #8bbfd8;
+    }
+
+    .dand-cell.has-dandelion {
+      background: #d8f0d8;
+      cursor: default;
+    }
+
+    .dand-cell.has-seed {
+      background: #f5f0d8;
+      cursor: default;
+    }
+
+    .dand-cell.occupied { cursor: default; }
+
+    .dand-icon {
+      width: 72%;
+      height: 72%;
+      pointer-events: none;
+    }
+
+    @keyframes dand-float-in {
+      from { opacity: 0; transform: scale(0.4) rotate(-20deg); }
+      to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+    }
+
+    .dand-icon { animation: dand-float-in 0.25s ease-out; }
+
+    /* Compass */
+    #dand-compass-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    #dand-compass {
+      width: min(28vw, 28vh);
+      height: min(28vw, 28vh);
+      min-width: 160px;
+      min-height: 160px;
+    }
+
+    .dand-arrow { cursor: pointer; }
+    .dand-arrow .dspoke  { stroke: #1a4a6e; stroke-width: 2.2; transition: stroke 0.15s; }
+    .dand-arrow .dhead   { fill: #1a4a6e; transition: fill 0.15s; }
+    .dand-arrow .dlabel  { fill: #1a4a6e; transition: fill 0.15s; }
+
+    .dand-arrow:hover .dspoke,
+    .dand-arrow:hover .dhead  { stroke: #5a9abf; fill: #5a9abf; }
+    .dand-arrow:hover .dlabel { fill: #5a9abf; }
+
+    .dand-arrow.dused .dspoke  { stroke: #b0bec5; stroke-dasharray: 4 3; }
+    .dand-arrow.dused .dhead   { fill: #b0bec5; }
+    .dand-arrow.dused .dlabel  { fill: #b0bec5; }
+    .dand-arrow.dused { cursor: not-allowed; }
+    .dand-arrow.dused:hover .dspoke { stroke: #b0bec5; }
+    .dand-arrow.dused:hover .dhead  { fill: #b0bec5; }
+
+    /* Status bar */
+    #dand-status {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.9rem, 2vw, 1.25rem);
+      color: #1a4a6e;
+      text-align: center;
+      letter-spacing: 0.03em;
+      padding: 10px 24px;
+      border-radius: 10px;
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      box-shadow: 0 2px 8px rgba(26,74,110,.08);
+      max-width: min(80vw, 500px);
+    }
+
+    /* Dand timer */
+    #dand-game-timer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+      color: #1a4a6e;
+      padding: 7px 16px;
+      border-radius: 12px;
+      border: 2.5px solid #5a9abf;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(26,74,110,.08);
+    }
+
+    #dand-game-timer.hidden  { display: none; }
+    #dand-game-timer.urgent  { color: #c0392b; border-color: #c0392b; }
+    #dand-game-timer.ringing { animation: timer-ring 0.9s ease-out forwards; }
+
+    /* Wind gust canvas */
+    #dand-gust-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    /* Game over overlay */
+    #dand-game-over {
+      position: absolute;
+      inset: 0;
+      background: rgba(208,232,242,0.9);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+      z-index: 30;
+    }
+
+    #dand-game-over.visible { opacity: 1; pointer-events: auto; }
+
+    #othello-deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .oth-deco-board {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      opacity: 0.15;
+      gap: 3px;
+    }
+
+    .oth-deco-cell {
+      border-radius: 50%;
+    }
+
+    #othello-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #othello-left > * {
+      pointer-events: auto;
+    }
+
+    #othello-left h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    #ttt-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      width: min(70vw, 62vh);
+      height: min(70vw, 62vh);
+    }
+
+    .ttt-cell {
+      border: 3.5px solid #1a4a6e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 800;
+      font-size: min(15.5vw, 13.7vh);
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+      line-height: 1;
+      overflow: hidden;
+    }
+
+    .ttt-cell:nth-child(1), .ttt-cell:nth-child(2), .ttt-cell:nth-child(3) { border-top: none; }
+    .ttt-cell:nth-child(7), .ttt-cell:nth-child(8), .ttt-cell:nth-child(9) { border-bottom: none; }
+    .ttt-cell:nth-child(1), .ttt-cell:nth-child(4), .ttt-cell:nth-child(7) { border-left: none; }
+    .ttt-cell:nth-child(3), .ttt-cell:nth-child(6), .ttt-cell:nth-child(9) { border-right: none; }
+
+    .ttt-cell:hover:not(.taken) {
+      background: rgba(26, 74, 110, 0.07);
+    }
+
+    .ttt-cell.win-cell {
+      background: rgba(26, 74, 110, 0.13);
+    }
+
+    .ttt-cell.o-mark {
+      -webkit-text-stroke: 0.04em currentColor;
+    }
+
+    .ttt-cell.o-mark .o-sym {
+      display: inline-block;
+      transform: scale(1.55);
+    }
+
+    #game-status {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.05rem, 2.4vw, 1.55rem);
+      color: #1a4a6e;
+      letter-spacing: 0.04em;
+    }
+
+    #game-timer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+      color: #1a4a6e;
+      padding: 8px 18px;
+      border-radius: 12px;
+      border: 2.5px solid #5a9abf;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    #game-timer.hidden { display: none; }
+
+    #game-timer.urgent {
+      color: #c0392b;
+      border-color: #c0392b;
+    }
+
+    #stopwatch-icon {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    #timer-display {
+      min-width: 2.4ch;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @keyframes timer-ring {
+      0%   { transform: translateX(0);    box-shadow: 0 0 0 0   rgba(192,57,43,0.55); }
+      12%  { transform: translateX(-6px); box-shadow: 0 0 0 6px rgba(192,57,43,0.4); }
+      24%  { transform: translateX(6px);  box-shadow: 0 0 0 12px rgba(192,57,43,0.25); }
+      36%  { transform: translateX(-5px); box-shadow: 0 0 0 18px rgba(192,57,43,0.12); }
+      48%  { transform: translateX(5px);  box-shadow: 0 0 0 24px rgba(192,57,43,0.04); }
+      64%  { transform: translateX(-3px); box-shadow: 0 0 0 30px rgba(192,57,43,0); }
+      80%  { transform: translateX(2px); }
+      92%  { transform: translateX(-1px); }
+      100% { transform: translateX(0); }
+    }
+
+    #game-timer.ringing {
+      animation: timer-ring 0.9s ease-out forwards;
+    }
+
+    #game-over-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(208, 232, 242, 0.9);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+    }
+
+    #game-over-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #game-over-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    #game-over-msg {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.5rem, 4.5vw, 2.6rem);
+      color: #1a4a6e;
+      text-align: center;
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+      padding: 0 24px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── Othello Game Screen ────────────────────────────────── */
+    #screen-oth-game {
+      clip-path: circle(0px at 50% 50%);
+      gap: 14px;
+    }
+
+    #oth-board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: min(72vw, 72vh);
+      height: min(72vw, 72vh);
+      background: #1a6e3a;
+      border: 3px solid #1a4a6e;
+      border-radius: 4px;
+      gap: 2px;
+      padding: 2px;
+    }
+
+    .oth-cell {
+      background: #2d8a50;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .oth-cell:hover:not(.oth-taken) {
+      background: #3aa860;
+    }
+
+    .oth-piece {
+      width: 76%;
+      height: 76%;
+      border-radius: 50%;
+      transition: background 0.18s;
+      pointer-events: none;
+    }
+
+    .oth-piece.dark  { background: #1a2a3e; box-shadow: inset 0 2px 4px rgba(255,255,255,0.15); }
+    .oth-piece.light { background: #f0f4f8; box-shadow: inset 0 2px 4px rgba(0,0,0,0.12); }
+
+    #oth-status {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.05rem, 2.4vw, 1.55rem);
+      color: #1a4a6e;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #oth-status-piece {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    #oth-score {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+      color: #1a4a6e;
+      letter-spacing: 0.04em;
+    }
+
+    #oth-game-timer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+      color: #1a4a6e;
+      padding: 8px 18px;
+      border-radius: 12px;
+      border: 2.5px solid #5a9abf;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    #oth-game-timer.hidden { display: none; }
+
+    #oth-game-timer.urgent {
+      color: #c0392b;
+      border-color: #c0392b;
+    }
+
+    #oth-game-timer.ringing {
+      animation: timer-ring 0.9s ease-out forwards;
+    }
+
+    #oth-game-over {
+      position: absolute;
+      inset: 0;
+      background: rgba(208, 232, 242, 0.9);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+    }
+
+    #oth-game-over.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Main Menu ─────────────────────────────────────────── -->
+  <div id="screen-menu" class="screen">
+    <div id="menu-deco"></div>
+
+    <h1>SIMPLE GAMES</h1>
+
+    <div class="game-list">
+      <button class="game-btn" id="btn-ttt">Tic Tac Toe</button>
+      <button class="game-btn" id="btn-othello">Othello</button>
+      <button class="game-btn" id="btn-dandelions">Dandelions</button>
+    </div>
+  </div>
+
+  <!-- ── Tic Tac Toe Screen ─────────────────────────────────── -->
+  <div id="screen-ttt" class="screen">
+    <button class="settings-btn" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                 a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                 A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                 l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                 A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                 l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                 a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                 l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                 a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <div id="ttt-deco"></div>
+
+    <div id="ttt-left">
+      <h2>TIC TAC TOE</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-ttt">Play</button>
+        <button class="game-btn" id="btn-ttt-settings">Settings</button>
+        <button class="game-btn" id="btn-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TTT Settings Screen ───────────────────────────────── -->
+  <div id="screen-ttt-settings" class="screen">
+    <button class="settings-btn" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                 a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                 A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                 l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                 A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                 l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                 a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                 l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                 a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <div id="ttt-settings-inner">
+      <h2>TIC TAC TOE SETTINGS</h2>
+
+      <!-- Who goes first -->
+      <div class="setting-row">
+        <span class="setting-label">Who goes first</span>
+        <button id="first-player-toggle">Player 1 is ✕</button>
+      </div>
+
+      <!-- X colour -->
+      <div class="setting-row">
+        <span class="setting-label"><span class="sym">✕</span> Colour</span>
+        <div class="color-row">
+          <div class="color-preview" id="x-preview"></div>
+          <input type="range" class="hue-slider" id="x-hue" min="0" max="360" value="0">
+        </div>
+      </div>
+
+      <!-- O colour -->
+      <div class="setting-row">
+        <span class="setting-label"><span class="sym">○</span> Colour</span>
+        <div class="color-row">
+          <div class="color-preview" id="o-preview"></div>
+          <input type="range" class="hue-slider" id="o-hue" min="0" max="360" value="220">
+        </div>
+      </div>
+
+      <!-- Time limit -->
+      <div class="setting-row">
+        <span class="setting-label">Time limit per turn</span>
+        <input type="range" class="time-slider" id="time-slider" min="0" max="7" value="0" step="1">
+        <div class="time-value" id="time-value">Unlimited</div>
+      </div>
+
+      <!-- Back -->
+      <div class="game-list">
+        <button class="game-btn" id="btn-settings-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dandelions Lobby ─────────────────────────────────────────── -->
+  <div id="screen-dandelions" class="screen">
+
+    <div id="dandelions-deco"></div>
+
+    <div id="dandelions-left">
+      <h2>DANDELIONS</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-dand-game">Play</button>
+        <button class="game-btn" id="btn-dandelions-settings">Settings</button>
+        <button class="game-btn" id="btn-dandelions-back">Back</button>
+        <button class="game-btn" id="btn-play-dandelions">Open classic game ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dandelions Settings Screen ───────────────────────────── -->
+  <div id="screen-dandelions-settings" class="screen">
+    <div id="ttt-settings-inner">
+      <h2>DANDELIONS SETTINGS</h2>
+
+      <!-- Dandelion style -->
+      <div class="setting-row">
+        <span class="setting-label">Dandelion Style</span>
+        <div class="style-picker" id="dand-style-picker">
+          <button class="style-opt selected" data-val="classic">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72">
+              <!-- spokes -->
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(30 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(60 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(90 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(120 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(150 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(180 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(210 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(240 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(270 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(300 36 36)"/>
+              <line x1="36" y1="30" x2="36" y2="8"  stroke="#9b8b2b" stroke-width="1.4" transform="rotate(330 36 36)"/>
+              <!-- bulbs -->
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" />
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(30 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(60 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(90 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(120 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(150 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(180 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(210 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(240 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(270 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(300 36 36)"/>
+              <circle cx="36" cy="8"  r="4" fill="#f0e04a" stroke="#c8a820" stroke-width="1" transform="rotate(330 36 36)"/>
+              <!-- centre -->
+              <circle cx="36" cy="36" r="6" fill="#f0e04a" stroke="#c8a820" stroke-width="1.5"/>
+            </svg>
+          </button>
+          <button class="style-opt" data-val="full">🌻</button>
+          <button class="style-opt" data-val="minimal">✿</button>
+        </div>
+      </div>
+
+      <!-- Seed style -->
+      <div class="setting-row">
+        <span class="setting-label">Seed Style</span>
+        <div class="style-picker" id="seed-style-picker">
+          <button class="style-opt" data-val="realistic">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <line x1="18" y1="30" x2="18" y2="15"/>
+              <ellipse cx="18" cy="31.5" rx="2.8" ry="1.6" fill="currentColor" stroke="none"/>
+              <line x1="18" y1="15" x2="9"  y2="6"/>
+              <line x1="18" y1="15" x2="13" y2="4"/>
+              <line x1="18" y1="15" x2="18" y2="3"/>
+              <line x1="18" y1="15" x2="23" y2="4"/>
+              <line x1="18" y1="15" x2="27" y2="6"/>
+              <circle cx="9"  cy="6"  r="1.4" fill="currentColor" stroke="none"/>
+              <circle cx="13" cy="4"  r="1.4" fill="currentColor" stroke="none"/>
+              <circle cx="18" cy="3"  r="1.4" fill="currentColor" stroke="none"/>
+              <circle cx="23" cy="4"  r="1.4" fill="currentColor" stroke="none"/>
+              <circle cx="27" cy="6"  r="1.4" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+          <button class="style-opt selected" data-val="wisp">✦</button>
+          <button class="style-opt" data-val="star">✸</button>
+        </div>
+      </div>
+
+      <!-- Mode -->
+      <div class="setting-row">
+        <span class="setting-label">Game Mode</span>
+        <div class="mode-toggle" id="dand-mode-toggle">
+          <button class="mode-opt selected" data-val="versus">Versus</button>
+          <button class="mode-opt" data-val="coop">Co-op</button>
+          <button class="mode-opt" data-val="single">Single Player</button>
+        </div>
+      </div>
+
+      <!-- Role picker (single player only) -->
+      <div class="setting-row" id="dand-role-row" style="display:none">
+        <span class="setting-label">You play as</span>
+        <div class="mode-toggle" id="dand-role-toggle">
+          <button class="mode-opt selected" data-val="dandelion">🌼 Dandelion</button>
+          <button class="mode-opt" data-val="wind">💨 Wind</button>
+        </div>
+      </div>
+
+      <!-- Time limit -->
+      <div class="setting-row">
+        <span class="setting-label">Time limit per turn</span>
+        <input type="range" class="time-slider" id="dand-time-slider" min="0" max="7" value="0" step="1">
+        <div class="time-value" id="dand-time-value">Unlimited</div>
+      </div>
+
+      <!-- Back -->
+      <div class="game-list">
+        <button class="game-btn" id="btn-dand-settings-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dandelions Game Screen ───────────────────────────────────── -->
+  <div id="screen-dand-game" class="screen">
+    <canvas id="dand-gust-canvas"></canvas>
+
+    <!-- back button -->
+    <button class="settings-btn" id="btn-dand-game-back" aria-label="Back" style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <!-- top strip: status + timer -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px;width:100%;">
+      <div id="dand-game-timer" class="hidden">
+        <span id="dand-timer-icon">&#9203;</span>
+        <span id="dand-timer-text">30s</span>
+      </div>
+      <div id="dand-status">Loading...</div>
+    </div>
+
+    <!-- board + compass row -->
+    <div id="dand-game-layout">
+      <div id="dand-board"></div>
+
+      <div id="dand-compass-wrap">
+        <svg id="dand-compass" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+          <circle cx="100" cy="100" r="88" fill="rgba(255,255,255,0.25)" stroke="#1a4a6e" stroke-width="2"/>
+          <circle cx="100" cy="100" r="6" fill="#1a4a6e"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- game over overlay -->
+    <div id="dand-game-over">
+      <div style="background:#fff;border-radius:20px;padding:40px 48px;text-align:center;box-shadow:0 8px 32px rgba(26,74,110,.18);display:flex;flex-direction:column;align-items:center;gap:18px;">
+        <div id="dand-over-msg" style="font-family:'Lexend',sans-serif;font-weight:700;font-size:1.5rem;color:#1a4a6e;"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;">
+          <button class="game-btn" id="btn-dand-play-again">Play Again</button>
+          <button class="game-btn" id="btn-dand-main-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Othello Screen ───────────────────────────────────────────── -->
+  <div id="screen-othello" class="screen">
+
+    <div id="othello-deco"></div>
+
+    <div id="othello-left">
+      <h2>OTHELLO</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-othello">Play</button>
+        <button class="game-btn" id="btn-othello-settings">Settings</button>
+        <button class="game-btn" id="btn-othello-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Othello Settings Screen ──────────────────────────────── -->
+  <div id="screen-othello-settings" class="screen">
+    <div id="ttt-settings-inner">
+      <h2>OTHELLO SETTINGS</h2>
+
+      <!-- Time limit -->
+      <div class="setting-row">
+        <span class="setting-label">Time limit per turn</span>
+        <input type="range" class="time-slider" id="oth-time-slider" min="0" max="7" value="0" step="1">
+        <div class="time-value" id="oth-time-value">Unlimited</div>
+      </div>
+
+      <!-- Back -->
+      <div class="game-list">
+        <button class="game-btn" id="btn-oth-settings-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TTT Game Screen ──────────────────────────────────────── -->
+  <div id="screen-ttt-game" class="screen">
+
+    <button class="settings-btn" id="btn-game-back" aria-label="Back" style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <div id="game-timer" class="hidden">
+      <svg id="stopwatch-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="14" r="8"/>
+        <polyline points="12 9 12 14 15 17"/>
+        <path d="M9.17 2h5.66"/>
+        <path d="M12 2v3"/>
+      </svg>
+      <span id="timer-display">30</span>
+    </div>
+
+    <div id="game-status">Player 1's turn</div>
+
+    <div id="ttt-board">
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+      <div class="ttt-cell"></div>
+    </div>
+
+    <div id="game-over-overlay">
+      <div id="game-over-box">
+        <div id="game-over-msg"></div>
+        <div class="game-list" style="max-width:300px">
+          <button class="game-btn" id="btn-play-again">Play Again</button>
+          <button class="game-btn" id="btn-to-ttt-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Othello Game Screen ─────────────────────────────────── -->
+  <div id="screen-oth-game" class="screen">
+
+    <button class="settings-btn" id="btn-oth-game-back" aria-label="Back"
+            style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <div id="oth-game-timer" class="hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="14" r="8"/>
+        <polyline points="12 9 12 14 15 17"/>
+        <path d="M9.17 2h5.66"/>
+        <path d="M12 2v3"/>
+      </svg>
+      <span id="oth-timer-display">30</span>
+    </div>
+
+    <div id="oth-status">
+      <span id="oth-status-piece"></span>
+      <span id="oth-status-text">Player 1's turn</span>
+    </div>
+
+    <div id="oth-score"></div>
+
+    <div id="oth-board"></div>
+
+    <div id="oth-game-over">
+      <div id="game-over-box">
+        <div id="oth-game-over-msg" style="font-family:'Lexend',sans-serif;font-weight:700;font-size:clamp(1.5rem,4.5vw,2.6rem);color:#1a4a6e;text-align:center;letter-spacing:.04em;line-height:1.3;padding:0 24px;text-shadow:0 2px 8px rgba(26,74,110,.12)"></div>
+        <div class="game-list" style="max-width:300px">
+          <button class="game-btn" id="btn-oth-play-again">Play Again</button>
+          <button class="game-btn" id="btn-oth-to-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const screenTTT      = document.getElementById('screen-ttt');
+    const screenTTTSet   = document.getElementById('screen-ttt-settings');
+    const btnTTT         = document.getElementById('btn-ttt');
+    const btnBack        = document.getElementById('btn-back');
+    const btnTTTSettings = document.getElementById('btn-ttt-settings');
+    const btnSettingsBack= document.getElementById('btn-settings-back');
+
+    // ── Warp helpers ──────────────────────────────────────────
+    function getCenter(el) {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    function warpIn(screen, originEl) {
+      const { x, y } = getCenter(originEl);
+      screen.style.setProperty('--ox', x + 'px');
+      screen.style.setProperty('--oy', y + 'px');
+      screen.style.animation = 'none';
+      screen.getBoundingClientRect();
+      screen.style.animation = 'warp-in 1s cubic-bezier(0.35, 0, 0.75, 0) forwards';
+    }
+
+    function warpOut(screen, targetEl) {
+      const { x, y } = getCenter(targetEl);
+      screen.style.setProperty('--ox', x + 'px');
+      screen.style.setProperty('--oy', y + 'px');
+      screen.style.animation = 'none';
+      screen.getBoundingClientRect();
+      screen.style.animation = 'warp-out 1s cubic-bezier(0.25, 1, 0.65, 1) forwards';
+    }
+
+    // ── TTT Settings controls ─────────────────────────────────
+    const timeLevels  = ['Unlimited', '10s', '15s', '20s', '30s', '45s', '60s', '90s'];
+    const timeSlider  = document.getElementById('time-slider');
+    const timeValue   = document.getElementById('time-value');
+    const xHue        = document.getElementById('x-hue');
+    const oHue        = document.getElementById('o-hue');
+    const xPreview    = document.getElementById('x-preview');
+    const oPreview    = document.getElementById('o-preview');
+    const firstToggle = document.getElementById('first-player-toggle');
+
+    function updateXColor() { xPreview.style.background = `hsl(${xHue.value}, 80%, 55%)`; }
+    function updateOColor() { oPreview.style.background = `hsl(${oHue.value}, 80%, 55%)`; }
+
+    updateXColor();
+    updateOColor();
+    timeValue.textContent = timeLevels[0];
+
+    xHue.addEventListener('input', updateXColor);
+    oHue.addEventListener('input', updateOColor);
+    timeSlider.addEventListener('input', function () {
+      timeValue.textContent = timeLevels[this.value];
+    });
+
+    let p1IsX = true;
+    firstToggle.addEventListener('click', function () {
+      p1IsX = !p1IsX;
+      this.textContent = p1IsX ? 'Player 1 is \u2715' : 'Player 1 is \u25cb';
+    });
+
+    // ── Screen navigation ─────────────────────────────────────
+    btnTTT.addEventListener('click', function () { warpIn(screenTTT, this); });
+    btnBack.addEventListener('click', function () { warpOut(screenTTT, btnTTT); });
+    btnTTTSettings.addEventListener('click', function () { warpIn(screenTTTSet, this); });
+    btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, btnTTTSettings); });
+    const screenOthello        = document.getElementById('screen-othello');
+    const screenOthelloSettings = document.getElementById('screen-othello-settings');
+    const btnOthello            = document.getElementById('btn-othello');
+    const btnOthelloBack        = document.getElementById('btn-othello-back');
+    const btnOthelloSettings    = document.getElementById('btn-othello-settings');
+    const btnOthSettingsBack    = document.getElementById('btn-oth-settings-back');
+    const othTimeSlider         = document.getElementById('oth-time-slider');
+    const othTimeValue          = document.getElementById('oth-time-value');
+
+    othTimeSlider.addEventListener('input', function () {
+      othTimeValue.textContent = timeLevels[this.value];
+    });
+
+    btnOthello.addEventListener('click', function () { warpIn(screenOthello, this); });
+    btnOthelloBack.addEventListener('click', function () { warpOut(screenOthello, btnOthello); });
+    btnOthelloSettings.addEventListener('click', function () { warpIn(screenOthelloSettings, this); });
+    btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthelloSettings, btnOthelloSettings); });
+
+    const screenDandelions        = document.getElementById('screen-dandelions');
+    const screenDandelionsSettings = document.getElementById('screen-dandelions-settings');
+    const btnDandelions            = document.getElementById('btn-dandelions');
+    const btnDandeBack             = document.getElementById('btn-dandelions-back');
+    const btnDandelionsSettings    = document.getElementById('btn-dandelions-settings');
+    const btnDandSettingsBack      = document.getElementById('btn-dand-settings-back');
+    const btnPlayDandelions        = document.getElementById('btn-play-dandelions');
+
+    // Style pickers
+    document.querySelectorAll('#dand-style-picker .style-opt, #seed-style-picker .style-opt').forEach(btn => {
+      btn.addEventListener('click', function () {
+        this.closest('.style-picker').querySelectorAll('.style-opt').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+
+    // Mode toggle
+    const dandRoleRow = document.getElementById('dand-role-row');
+    document.querySelectorAll('#dand-mode-toggle .mode-opt').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#dand-mode-toggle .mode-opt').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        dandRoleRow.style.display = this.getAttribute('data-val') === 'single' ? '' : 'none';
+      });
+    });
+
+    // Role toggle (single player)
+    document.querySelectorAll('#dand-role-toggle .mode-opt').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#dand-role-toggle .mode-opt').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+
+    // ── Menu decorations ─────────────────────────────────────
+    (function () {
+      const deco = document.getElementById('menu-deco');
+      const pieces = ['♔','♕','♖','♗','♘','♙','♚','♛','♜','♝','♞','♟'];
+      const rng = (() => { let s = 42; return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; }; })();
+
+      // Returns a [left%, top%] pair guaranteed to be outside the center content area.
+      // Exclusion zone: horizontal 28–72%, vertical 20–80% (title + 3 buttons).
+      function safePos() {
+        for (let attempt = 0; attempt < 40; attempt++) {
+          const l = rng() * 100, t = rng() * 100;
+          if (l >= 28 && l <= 72 && t >= 20 && t <= 80) continue;
+          return [l, t];
+        }
+        // Fallback: force into a corner zone
+        return [rng() < 0.5 ? rng() * 24 : 76 + rng() * 24, rng() * 100];
+      }
+
+      // Scatter chess piece characters
+      for (let i = 0; i < 32; i++) {
+        const el = document.createElement('span');
+        el.className = 'menu-deco-piece';
+        el.textContent = pieces[i % pieces.length];
+        const size = 2.0 + rng() * 3.2;
+        const rot  = (rng() - 0.5) * 50;
+        const op   = 0.07 + rng() * 0.1;
+        const [l, t] = safePos();
+        el.style.cssText = `left:${l.toFixed(2)}%;top:${t.toFixed(2)}%;font-size:${size.toFixed(2)}rem;opacity:${op.toFixed(3)};transform:translate(-50%,-50%) rotate(${rot.toFixed(1)}deg);`;
+        deco.appendChild(el);
+      }
+
+      // Scatter small chess boards (4×4 checker pattern)
+      const ns = 'http://www.w3.org/2000/svg';
+      for (let b = 0; b < 7; b++) {
+        const svg = document.createElementNS(ns, 'svg');
+        const sq = 10, S = 4;
+        svg.setAttribute('viewBox', `0 0 ${S*sq} ${S*sq}`);
+        const bpx = Math.round(38 + rng() * 52);
+        const rot = (rng() - 0.5) * 35;
+        const op  = 0.07 + rng() * 0.09;
+        const [l, t] = safePos();
+        svg.style.cssText = `position:absolute;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%;width:${bpx}px;height:${bpx}px;opacity:${op.toFixed(3)};transform:translate(-50%,-50%) rotate(${rot.toFixed(1)}deg);pointer-events:none;`;
+        for (let r = 0; r < S; r++) {
+          for (let c = 0; c < S; c++) {
+            const rect = document.createElementNS(ns, 'rect');
+            rect.setAttribute('x', c * sq);
+            rect.setAttribute('y', r * sq);
+            rect.setAttribute('width', sq);
+            rect.setAttribute('height', sq);
+            rect.setAttribute('fill', (r + c) % 2 === 0 ? '#1a4a6e' : '#a8d0e8');
+            svg.appendChild(rect);
+          }
+        }
+        deco.appendChild(svg);
+      }
+    })();
+
+    btnDandelions.addEventListener('click', function () { warpIn(screenDandelions, this); });
+    btnDandeBack.addEventListener('click', function () { warpOut(screenDandelions, btnDandelions); });
+    btnDandelionsSettings.addEventListener('click', function () { warpIn(screenDandelionsSettings, this); });
+    btnDandSettingsBack.addEventListener('click', function () { warpOut(screenDandelionsSettings, btnDandelionsSettings); });
+    btnPlayDandelions.addEventListener('click', function () { location.href = '/dandelions'; });
+
+    const dandTimeSlider = document.getElementById('dand-time-slider');
+    const dandTimeValue  = document.getElementById('dand-time-value');
+    dandTimeSlider.addEventListener('input', function () {
+      dandTimeValue.textContent = timeLevels[this.value];
+    });
+
+    // ── Dandelions Versus Game ────────────────────────────────
+    (function () {
+      const screenDandGame    = document.getElementById('screen-dand-game');
+      const btnPlayDandGame   = document.getElementById('btn-play-dand-game');
+      const btnDandGameBack   = document.getElementById('btn-dand-game-back');
+      const btnDandPlayAgain  = document.getElementById('btn-dand-play-again');
+      const btnDandMainMenu   = document.getElementById('btn-dand-main-menu');
+      const dandBoard         = document.getElementById('dand-board');
+      const dandCompassSVG    = document.getElementById('dand-compass');
+      const dandStatus        = document.getElementById('dand-status');
+      const dandTimerEl       = document.getElementById('dand-game-timer');
+      const dandTimerText     = document.getElementById('dand-timer-text');
+      const dandGameOver      = document.getElementById('dand-game-over');
+      const dandOverMsg       = document.getElementById('dand-over-msg');
+      const gustCanvas        = document.getElementById('dand-gust-canvas');
+      const gctx              = gustCanvas.getContext('2d');
+
+      const MAX_ROUNDS = 7;
+      const ns = 'http://www.w3.org/2000/svg';
+      const DIRS = [
+        { label: 'N',  angle: -90, dr: -1, dc:  0 },
+        { label: 'NE', angle: -45, dr: -1, dc:  1 },
+        { label: 'E',  angle:   0, dr:  0, dc:  1 },
+        { label: 'SE', angle:  45, dr:  1, dc:  1 },
+        { label: 'S',  angle:  90, dr:  1, dc:  0 },
+        { label: 'SW', angle: 135, dr:  1, dc: -1 },
+        { label: 'W',  angle: 180, dr:  0, dc: -1 },
+        { label: 'NW', angle: 225, dr: -1, dc: -1 },
+      ];
+
+      let dRound, dPhase, dOver, dTimerInterval, dTimerRemaining, dTimerDuration;
+      let arrowGroups = [];
+      let cells = [];
+      let botTimeout = null;
+
+      // ── Build board ─────────────────────────────────────
+      function buildBoard() {
+        dandBoard.innerHTML = '';
+        cells = [];
+        for (let i = 0; i < 25; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'dand-cell';
+          cell.addEventListener('click', () => onDandCell(i));
+          dandBoard.appendChild(cell);
+          cells.push(cell);
+        }
+      }
+
+      // ── Build compass ────────────────────────────────────
+      function buildCompass() {
+        // Remove any previously added arrows (keep circle elements)
+        [...dandCompassSVG.querySelectorAll('.dand-arrow')].forEach(g => g.remove());
+        arrowGroups = [];
+
+        const cx = 100, cy = 100;
+        const spokeStart = 12, spokeEnd = 68, headLen = 13, headHalf = 6;
+        const labelR = 97;
+
+        DIRS.forEach(dir => {
+          const rad = dir.angle * Math.PI / 180;
+          const x1 = cx + spokeStart * Math.cos(rad);
+          const y1 = cy + spokeStart * Math.sin(rad);
+          const x2 = cx + spokeEnd   * Math.cos(rad);
+          const y2 = cy + spokeEnd   * Math.sin(rad);
+          const tx = cx + (spokeEnd + headLen) * Math.cos(rad);
+          const ty = cy + (spokeEnd + headLen) * Math.sin(rad);
+          const perp = rad + Math.PI / 2;
+          const bx1 = x2 + headHalf * Math.cos(perp), by1 = y2 + headHalf * Math.sin(perp);
+          const bx2 = x2 - headHalf * Math.cos(perp), by2 = y2 - headHalf * Math.sin(perp);
+          const lx = cx + labelR * Math.cos(rad);
+          const ly = cy + labelR * Math.sin(rad);
+
+          const g = document.createElementNS(ns, 'g');
+          g.classList.add('dand-arrow');
+          g.setAttribute('data-dir', dir.label);
+
+          const line = document.createElementNS(ns, 'line');
+          line.classList.add('dspoke');
+          line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+          g.appendChild(line);
+
+          const poly = document.createElementNS(ns, 'polygon');
+          poly.classList.add('dhead');
+          poly.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
+          g.appendChild(poly);
+
+          // Larger invisible hit area
+          const hit = document.createElementNS(ns, 'circle');
+          hit.setAttribute('cx', tx); hit.setAttribute('cy', ty);
+          hit.setAttribute('r', 14);
+          hit.setAttribute('fill', 'transparent');
+          hit.style.cursor = 'pointer';
+          g.appendChild(hit);
+
+          // Also hit area over spoke
+          const hitSpoke = document.createElementNS(ns, 'line');
+          hitSpoke.setAttribute('x1', x1); hitSpoke.setAttribute('y1', y1);
+          hitSpoke.setAttribute('x2', x2); hitSpoke.setAttribute('y2', y2);
+          hitSpoke.setAttribute('stroke', 'transparent');
+          hitSpoke.setAttribute('stroke-width', '14');
+          g.appendChild(hitSpoke);
+
+          const text = document.createElementNS(ns, 'text');
+          text.classList.add('dlabel');
+          text.setAttribute('x', lx); text.setAttribute('y', ly);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'central');
+          text.setAttribute('font-size', '11');
+          text.setAttribute('font-weight', 'bold');
+          text.setAttribute('pointer-events', 'none');
+          text.textContent = dir.label;
+          g.appendChild(text);
+
+          g.addEventListener('click', () => onDandCompass(dir.label, g));
+          dandCompassSVG.appendChild(g);
+          arrowGroups.push(g);
+        });
+      }
+
+      // ── Cell click ──────────────────────────────────────
+      function onDandCell(idx) {
+        if (dOver || dPhase !== 'dandelion') return;
+        const cell = cells[idx];
+        if (cell.classList.contains('occupied')) return;
+        stopDandTimer();
+        placeDandelion(idx);
+        advanceDandTurn();
+      }
+
+      // ── Compass click ────────────────────────────────────
+      function onDandCompass(dirLabel, g) {
+        if (dOver || dPhase !== 'wind') return;
+        if (g.classList.contains('dused')) return;
+        stopDandTimer();
+        triggerWind(dirLabel, g);
+      }
+
+      function triggerWind(dirLabel, g) {
+        // Disable all interaction while animating
+        dandBoard.style.pointerEvents = 'none';
+        dandCompassSVG.style.pointerEvents = 'none';
+
+        // Snapshot dandelion positions before spreading
+        const hasDandelion = cells.map(c => c.classList.contains('has-dandelion'));
+        const dir = DIRS.find(d => d.label === dirLabel);
+
+        // Start gust animation
+        playGust(dir.angle, function onGustDone() {
+          // Spread seeds after gust
+          spreadDandSeeds(dirLabel, hasDandelion);
+          g.classList.add('dused');
+          dandBoard.style.pointerEvents = '';
+          dandCompassSVG.style.pointerEvents = '';
+          advanceDandTurn();
+        });
+      }
+
+      // ── Gust animation ───────────────────────────────────
+      function playGust(angleDeg, onDone) {
+        const W = gustCanvas.width  = window.innerWidth;
+        const H = gustCanvas.height = window.innerHeight;
+        const rad = angleDeg * Math.PI / 180;
+        const vx = Math.cos(rad), vy = Math.sin(rad);
+        const perpX = -vy, perpY = vx;
+
+        const STREAKS = 36;
+        const CLOUDS  = 6;
+        const DURATION = 1400; // ms
+        const start = performance.now();
+
+        const streaks = Array.from({ length: STREAKS }, () => {
+          const spread = (Math.random() - 0.5) * Math.max(W, H) * 1.3;
+          const len = 60 + Math.random() * 100;
+          const speed = 0.5 + Math.random() * 0.5;
+          const delay = Math.random() * 0.35;
+          const cx0 = W / 2 + perpX * spread - vx * (len + Math.random() * W * 0.6);
+          const cy0 = H / 2 + perpY * spread - vy * (len + Math.random() * H * 0.6);
+          return { cx0, cy0, len, speed, delay, alpha: 0.6 + Math.random() * 0.35,
+                   lw: 3 + Math.random() * 2 };
+        });
+
+        // Cloud puffs: each is a cluster of circles drifting with the wind
+        const clouds = Array.from({ length: CLOUDS }, () => {
+          const spread = (Math.random() - 0.5) * Math.max(W, H) * 0.9;
+          const speed = 0.35 + Math.random() * 0.3;
+          const delay = Math.random() * 0.3;
+          const r = 28 + Math.random() * 28;  // main puff radius
+          const cx0 = W / 2 + perpX * spread - vx * (r * 2 + Math.random() * W * 0.4);
+          const cy0 = H / 2 + perpY * spread - vy * (r * 2 + Math.random() * H * 0.4);
+          return { cx0, cy0, r, speed, delay, alpha: 0.18 + Math.random() * 0.14 };
+        });
+
+        function drawCloud(cx, cy, r, alpha) {
+          gctx.save();
+          gctx.globalAlpha = alpha;
+          gctx.fillStyle = '#ffffff';
+          gctx.beginPath();
+          gctx.arc(cx, cy, r, 0, Math.PI * 2);
+          gctx.arc(cx + r * 0.75, cy + r * 0.15, r * 0.72, 0, Math.PI * 2);
+          gctx.arc(cx - r * 0.65, cy + r * 0.2,  r * 0.65, 0, Math.PI * 2);
+          gctx.arc(cx + r * 0.2,  cy - r * 0.55, r * 0.6,  0, Math.PI * 2);
+          gctx.fill();
+          gctx.restore();
+        }
+
+        function draw(now) {
+          const elapsed = now - start;
+          const t = Math.min(elapsed / DURATION, 1);
+          gctx.clearRect(0, 0, W, H);
+
+          // Draw clouds first (behind streaks)
+          clouds.forEach(c => {
+            const st = Math.max(0, (t - c.delay) / (1 - c.delay));
+            if (st <= 0) return;
+            const travel = st * c.speed * Math.max(W, H) * 1.4;
+            const cx = c.cx0 + vx * travel;
+            const cy = c.cy0 + vy * travel;
+            const fade = st < 0.12 ? st / 0.12 : st > 0.8 ? (1 - st) / 0.2 : 1;
+            drawCloud(cx, cy, c.r, c.alpha * fade);
+          });
+
+          // Draw streaks on top
+          streaks.forEach(s => {
+            const st = Math.max(0, (t - s.delay) / (1 - s.delay));
+            if (st <= 0) return;
+            const travel = st * s.speed * Math.max(W, H) * 1.5;
+            const tailX = s.cx0 + vx * travel;
+            const tailY = s.cy0 + vy * travel;
+            const tipX  = tailX + vx * s.len;
+            const tipY  = tailY + vy * s.len;
+            const fade = st < 0.1 ? st / 0.1 : st > 0.85 ? (1 - st) / 0.15 : 1;
+            gctx.save();
+            gctx.globalAlpha = s.alpha * fade;
+            gctx.strokeStyle = '#ffffff';
+            gctx.lineWidth = s.lw;
+            gctx.lineCap = 'round';
+            gctx.beginPath();
+            gctx.moveTo(tailX, tailY);
+            gctx.lineTo(tipX, tipY);
+            gctx.stroke();
+            gctx.restore();
+          });
+
+          if (t < 1) {
+            requestAnimationFrame(draw);
+          } else {
+            gctx.clearRect(0, 0, W, H);
+            onDone();
+          }
+        }
+        requestAnimationFrame(draw);
+      }
+
+      // ── Place dandelion ──────────────────────────────────
+      function placeDandelion(idx) {
+        const cell = cells[idx];
+        cell.classList.add('has-dandelion', 'occupied');
+        cell.appendChild(makeDandIcon());
+      }
+
+      // ── Spread seeds ─────────────────────────────────────
+      function spreadDandSeeds(dirLabel, hasDandelion) {
+        const dir = DIRS.find(d => d.label === dirLabel);
+        hasDandelion.forEach((occupied, idx) => {
+          if (!occupied) return;
+          let r = Math.floor(idx / 5) + dir.dr;
+          let c = (idx % 5) + dir.dc;
+          while (r >= 0 && r <= 4 && c >= 0 && c <= 4) {
+            const cell = cells[r * 5 + c];
+            if (!cell.classList.contains('occupied')) {
+              cell.classList.add('has-seed', 'occupied');
+              cell.appendChild(makeSeedIcon());
+            }
+            r += dir.dr; c += dir.dc;
+          }
+        });
+      }
+
+      // ── Advance turn ─────────────────────────────────────
+      function advanceDandTurn() {
+        if (dPhase === 'dandelion') {
+          const allFull = cells.every(c => c.classList.contains('occupied'));
+          if (allFull) { endDandGame(); return; }
+          dPhase = 'wind';
+        } else {
+          const allFull = cells.every(c => c.classList.contains('occupied'));
+          dRound++;
+          if (allFull || dRound > MAX_ROUNDS) { endDandGame(); return; }
+          dPhase = 'dandelion';
+        }
+        updateDandStatus();
+        if (activeDandMode === 'single' && isBotTurn()) {
+          scheduleBotMove();
+        } else {
+          startDandTimer();
+        }
+      }
+
+      // ── End game ─────────────────────────────────────────
+      function endDandGame() {
+        dOver = true;
+        stopDandTimer();
+        const empty = cells.filter(c => !c.classList.contains('occupied')).length;
+        let msg;
+        if (activeDandMode === 'coop') {
+          msg = empty === 0 ? '🌼 Your team won!' : '💨 Your team lost!';
+        } else if (activeDandMode === 'single') {
+          const playerWon = (activeSPRole === 'dandelion' && empty === 0) ||
+                            (activeSPRole === 'wind'      && empty > 0);
+          msg = playerWon ? '🎉 You Win!' : '🤖 Bot Wins!';
+        } else {
+          msg = empty === 0 ? '🌼 Dandelion Player Wins!' : '💨 Wind Player Wins!';
+        }
+        dandOverMsg.textContent = msg;
+        dandGameOver.classList.add('visible');
+        dandStatus.textContent = 'Game Over';
+      }
+
+      // ── Status ───────────────────────────────────────────
+      function updateDandStatus() {
+        if (activeDandMode === 'single' && isBotTurn()) {
+          const icon = dPhase === 'dandelion' ? '🌼' : '💨';
+          dandStatus.textContent = `Round ${dRound} of ${MAX_ROUNDS} — ${icon} Bot is thinking…`;
+          dandBoard.style.opacity = '0.4';
+          dandBoard.style.pointerEvents = 'none';
+          dandCompassSVG.style.opacity = '0.4';
+          dandCompassSVG.style.pointerEvents = 'none';
+          return;
+        }
+        if (dPhase === 'dandelion') {
+          const who = activeDandMode === 'single' ? 'Your turn' : 'Dandelion Player';
+          dandStatus.textContent = `Round ${dRound} of ${MAX_ROUNDS} — 🌼 ${who}: place a dandelion`;
+          dandBoard.style.opacity = '1';
+          dandBoard.style.pointerEvents = '';
+          dandCompassSVG.style.opacity = '0.4';
+          dandCompassSVG.style.pointerEvents = 'none';
+        } else {
+          const who = activeDandMode === 'single' ? 'Your turn' : 'Wind Player';
+          dandStatus.textContent = `Round ${dRound} of ${MAX_ROUNDS} — 💨 ${who}: choose a direction`;
+          dandBoard.style.opacity = '0.4';
+          dandBoard.style.pointerEvents = 'none';
+          dandCompassSVG.style.opacity = '1';
+          dandCompassSVG.style.pointerEvents = '';
+        }
+      }
+
+      // ── Timer ────────────────────────────────────────────
+      function stopDandTimer() {
+        clearInterval(dTimerInterval);
+        dTimerInterval = null;
+        if (botTimeout) { clearTimeout(botTimeout); botTimeout = null; }
+      }
+
+      function startDandTimer() {
+        stopDandTimer();
+        if (dTimerDuration === 0) return;
+        dTimerRemaining = dTimerDuration;
+        dandTimerText.textContent = dTimerRemaining + 's';
+        dandTimerEl.classList.remove('hidden', 'urgent', 'ringing');
+        dTimerInterval = setInterval(() => {
+          dTimerRemaining--;
+          dandTimerText.textContent = dTimerRemaining + 's';
+          if (dTimerRemaining <= 5) dandTimerEl.classList.add('urgent');
+          if (dTimerRemaining <= 0) {
+            stopDandTimer();
+            dandTimerEl.classList.add('ringing');
+            takeRandomDandMove();
+          }
+        }, 1000);
+      }
+
+      function takeRandomDandMove() {
+        if (dOver) return;
+        if (dPhase === 'dandelion') {
+          const empty = cells.map((c, i) => i).filter(i => !cells[i].classList.contains('occupied'));
+          if (empty.length === 0) return;
+          const idx = empty[Math.floor(Math.random() * empty.length)];
+          placeDandelion(idx);
+          advanceDandTurn();
+        } else {
+          const avail = arrowGroups.filter(g => !g.classList.contains('dused'));
+          if (avail.length === 0) return;
+          const g = avail[Math.floor(Math.random() * avail.length)];
+          triggerWind(g.getAttribute('data-dir'), g);
+        }
+      }
+
+      // ── Bot logic ────────────────────────────────────────
+      function isBotTurn() {
+        if (activeDandMode !== 'single') return false;
+        return (activeSPRole === 'dandelion' && dPhase === 'wind') ||
+               (activeSPRole === 'wind'      && dPhase === 'dandelion');
+      }
+
+      function scheduleBotMove() {
+        if (botTimeout) clearTimeout(botTimeout);
+        const minMs = dTimerDuration > 0 ? dTimerDuration * 0.10 * 1000 : 1500;
+        const maxMs = dTimerDuration > 0 ? dTimerDuration * 0.80 * 1000 : 5000;
+        const delay = minMs + Math.random() * (maxMs - minMs);
+        botTimeout = setTimeout(function () {
+          botTimeout = null;
+          if (!dOver) takeRandomDandMove();
+        }, delay);
+      }
+
+      // ── Icon makers ──────────────────────────────────────
+      let activeDandStyle = 'classic';
+      let activeSeedStyle = 'wisp';
+      let activeDandMode  = 'versus';
+      let activeSPRole    = 'dandelion';
+
+      function makeEmojiIcon(ch) {
+        const span = document.createElement('span');
+        span.classList.add('dand-icon');
+        span.style.cssText = 'display:flex;align-items:center;justify-content:center;width:72%;height:72%;font-size:clamp(1.4rem,4vmin,2.4rem);line-height:1;';
+        span.textContent = ch;
+        return span;
+      }
+
+      function makeDandIcon() {
+        if (activeDandStyle === 'full')    return makeEmojiIcon('🌻');
+        if (activeDandStyle === 'minimal') return makeEmojiIcon('✿');
+        // classic — SVG puffball
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 72 72');
+        svg.classList.add('dand-icon');
+        const dcx = 36, dcy = 36, spokeCount = 12, innerR = 6, spokeLen = 22, bulbR = 4;
+        for (let i = 0; i < spokeCount; i++) {
+          const angle = (2 * Math.PI / spokeCount) * i - Math.PI / 2;
+          const x1 = dcx + innerR * Math.cos(angle), y1 = dcy + innerR * Math.sin(angle);
+          const x2 = dcx + (innerR + spokeLen) * Math.cos(angle), y2 = dcy + (innerR + spokeLen) * Math.sin(angle);
+          const line = document.createElementNS(svgNS, 'line');
+          line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+          line.setAttribute('stroke', '#9b8b2b'); line.setAttribute('stroke-width', '1.4');
+          svg.appendChild(line);
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', x2); circle.setAttribute('cy', y2); circle.setAttribute('r', bulbR);
+          circle.setAttribute('fill', '#f0e04a'); circle.setAttribute('stroke', '#c8a820'); circle.setAttribute('stroke-width', '1');
+          svg.appendChild(circle);
+        }
+        const centre = document.createElementNS(svgNS, 'circle');
+        centre.setAttribute('cx', dcx); centre.setAttribute('cy', dcy); centre.setAttribute('r', innerR);
+        centre.setAttribute('fill', '#f0e04a'); centre.setAttribute('stroke', '#c8a820'); centre.setAttribute('stroke-width', '1.5');
+        svg.appendChild(centre);
+        return svg;
+      }
+
+      function makeSeedIcon() {
+        if (activeSeedStyle === 'wisp') return makeEmojiIcon('✦');
+        if (activeSeedStyle === 'star') return makeEmojiIcon('✸');
+        // realistic — SVG seed with filaments
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 72 72');
+        svg.classList.add('dand-icon');
+        const stem = document.createElementNS(svgNS, 'line');
+        stem.setAttribute('x1', 36); stem.setAttribute('y1', 64); stem.setAttribute('x2', 36); stem.setAttribute('y2', 46);
+        stem.setAttribute('stroke', '#9b8b2b'); stem.setAttribute('stroke-width', '1.5');
+        svg.appendChild(stem);
+        const achene = document.createElementNS(svgNS, 'ellipse');
+        achene.setAttribute('cx', 36); achene.setAttribute('cy', 43); achene.setAttribute('rx', 3); achene.setAttribute('ry', 4.5);
+        achene.setAttribute('fill', '#b8a020');
+        svg.appendChild(achene);
+        const filamentCount = 9, spreadDeg = 70, filamentLen = 19;
+        const fb = { x: 36, y: 39 };
+        for (let i = 0; i < filamentCount; i++) {
+          const t = filamentCount === 1 ? 0 : (i / (filamentCount - 1)) * 2 - 1;
+          const angleDeg = -90 + t * spreadDeg;
+          const rad = angleDeg * Math.PI / 180;
+          const fx = fb.x + filamentLen * Math.cos(rad), fy = fb.y + filamentLen * Math.sin(rad);
+          const fil = document.createElementNS(svgNS, 'line');
+          fil.setAttribute('x1', fb.x); fil.setAttribute('y1', fb.y); fil.setAttribute('x2', fx); fil.setAttribute('y2', fy);
+          fil.setAttribute('stroke', '#aaaaaa'); fil.setAttribute('stroke-width', '1');
+          svg.appendChild(fil);
+          const tip = document.createElementNS(svgNS, 'circle');
+          tip.setAttribute('cx', fx); tip.setAttribute('cy', fy); tip.setAttribute('r', 2.5);
+          tip.setAttribute('fill', '#ffffff'); tip.setAttribute('stroke', '#999999'); tip.setAttribute('stroke-width', '0.8');
+          svg.appendChild(tip);
+        }
+        return svg;
+      }
+
+      // ── Start / reset game ───────────────────────────────
+      function startDandGame() {
+        dRound = 1; dPhase = 'dandelion'; dOver = false;
+        // Read selected styles from settings
+        const dandStyleSel = document.querySelector('#dand-style-picker .style-opt.selected');
+        const seedStyleSel = document.querySelector('#seed-style-picker .style-opt.selected');
+        const modeSel      = document.querySelector('#dand-mode-toggle .mode-opt.selected');
+        activeDandStyle = dandStyleSel ? dandStyleSel.getAttribute('data-val') : 'classic';
+        activeSeedStyle = seedStyleSel ? seedStyleSel.getAttribute('data-val') : 'wisp';
+        activeDandMode  = modeSel      ? modeSel.getAttribute('data-val')      : 'versus';
+        const roleSel   = document.querySelector('#dand-role-toggle .mode-opt.selected');
+        activeSPRole    = roleSel      ? roleSel.getAttribute('data-val')      : 'dandelion';
+        stopDandTimer();
+        dTimerDuration = parseInt(dandTimeSlider.value);
+        // Convert index to seconds using timeLevels
+        const durMap = [0, 10, 15, 20, 30, 45, 60, 90];
+        dTimerDuration = durMap[dTimerDuration] || 0;
+        if (dTimerDuration === 0) dandTimerEl.classList.add('hidden');
+        else dandTimerEl.classList.remove('hidden');
+        buildBoard();
+        buildCompass();
+        dandGameOver.classList.remove('visible');
+        gctx.clearRect(0, 0, gustCanvas.width, gustCanvas.height);
+        updateDandStatus();
+        if (activeDandMode === 'single' && isBotTurn()) {
+          scheduleBotMove();
+        } else {
+          startDandTimer();
+        }
+      }
+
+      // ── Wiring ───────────────────────────────────────────
+      btnPlayDandGame.addEventListener('click', function () {
+        warpIn(screenDandGame, this);
+        startDandGame();
+      });
+
+      btnDandGameBack.addEventListener('click', function () {
+        stopDandTimer();
+        warpOut(screenDandGame, btnPlayDandGame);
+      });
+
+      btnDandPlayAgain.addEventListener('click', startDandGame);
+
+      btnDandMainMenu.addEventListener('click', function () {
+        stopDandTimer();
+        warpOut(screenDandGame, btnPlayDandGame);
+      });
+    })();
+
+    // ── Dandelion seed decorations ────────────────────────────
+    (function () {
+      const container = document.getElementById('dandelions-deco');
+      const W = window.innerWidth, H = window.innerHeight;
+      const safeX1 = W * 0.25, safeX2 = W * 0.75;
+      const safeY1 = H * 0.20, safeY2 = H * 0.80;
+      const seeds = ['🌼', '✿', '❀', '🌸', '✾', '⚘'];
+      const count = 28;
+      let placed = 0, attempts = 0;
+      while (placed < count && attempts < 500) {
+        attempts++;
+        const size = 32 + Math.random() * 48;
+        const x = Math.random() * (W - size);
+        const y = Math.random() * (H - size);
+        if (x + size > safeX1 && x < safeX2 && y + size > safeY1 && y < safeY2) continue;
+        const el = document.createElement('span');
+        el.className = 'dand-deco-seed';
+        el.textContent = seeds[Math.floor(Math.random() * seeds.length)];
+        el.style.left      = x + 'px';
+        el.style.top       = y + 'px';
+        el.style.fontSize  = size + 'px';
+        el.style.transform = `rotate(${Math.random() * 360}deg)`;
+        container.appendChild(el);
+        placed++;
+      }
+    })();
+
+    // ── Decorative scattered boards ───────────────────────────
+    (function () {
+      const container = document.getElementById('ttt-deco');
+      const W = window.innerWidth, H = window.innerHeight;
+      // Safe zone: centre of screen, where title + buttons live
+      const safeX1 = W * 0.25, safeX2 = W * 0.75;
+      const safeY1 = H * 0.20, safeY2 = H * 0.80;
+
+      function overlaps(cx, cy, size) {
+        // cx/cy = top-left corner of board
+        return cx + size > safeX1 && cx < safeX2 &&
+               cy + size > safeY1 && cy < safeY2;
+      }
+
+      const count = 18;
+      const sizes = [44, 52, 60, 68, 80, 92, 106];
+      let attempts = 0;
+      let placed = 0;
+
+      while (placed < count && attempts < 400) {
+        attempts++;
+        const size = sizes[Math.floor(Math.random() * sizes.length)];
+        const x = Math.random() * (W - size);
+        const y = Math.random() * (H - size);
+        if (overlaps(x, y, size)) continue;
+
+        const angle = Math.random() * 360;
+        const board = document.createElement('div');
+        board.className = 'deco-board';
+        board.style.width = size + 'px';
+        board.style.height = size + 'px';
+        board.style.left = x + 'px';
+        board.style.top = y + 'px';
+        board.style.transform = `rotate(${angle}deg)`;
+
+        for (let i = 0; i < 9; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'deco-cell';
+          board.appendChild(cell);
+        }
+        container.appendChild(board);
+        placed++;
+      }
+    })();
+
+    // ── Othello decorative pieces ────────────────────────────────
+    (function () {
+      const container = document.getElementById('othello-deco');
+      const W = window.innerWidth, H = window.innerHeight;
+      const safeX1 = W * 0.25, safeX2 = W * 0.75;
+      const safeY1 = H * 0.20, safeY2 = H * 0.80;
+
+      function overlaps(cx, cy, size) {
+        return cx + size > safeX1 && cx < safeX2 &&
+               cy + size > safeY1 && cy < safeY2;
+      }
+
+      const count = 16;
+      const boardSizes = [52, 64, 76, 88, 104];
+      let placed = 0, attempts = 0;
+
+      while (placed < count && attempts < 400) {
+        attempts++;
+        const bs   = boardSizes[Math.floor(Math.random() * boardSizes.length)];
+        const gap  = bs * 0.06;
+        const size = bs + gap;
+        const x    = Math.random() * (W - size);
+        const y    = Math.random() * (H - size);
+        if (overlaps(x, y, size)) continue;
+
+        const angle = Math.random() * 360;
+        const board = document.createElement('div');
+        board.className = 'oth-deco-board';
+        board.style.width     = size + 'px';
+        board.style.height    = size + 'px';
+        board.style.left      = x + 'px';
+        board.style.top       = y + 'px';
+        board.style.transform = `rotate(${angle}deg)`;
+        board.style.gap       = gap + 'px';
+
+        // Random mix of black/white/empty pieces
+        for (let i = 0; i < 16; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'oth-deco-cell';
+          const r = Math.random();
+          if (r < 0.4)      cell.style.background = '#1a4a6e';
+          else if (r < 0.8) cell.style.background = '#ffffff';
+          // else empty
+          board.appendChild(cell);
+        }
+        container.appendChild(board);
+        placed++;
+      }
+    })();
+
+    // ── Othello decorative pieces ─────────────────────────────
+    (function () {
+      const container = document.getElementById('othello-deco');
+      const W = window.innerWidth, H = window.innerHeight;
+      const safeX1 = W * 0.25, safeX2 = W * 0.75;
+      const safeY1 = H * 0.20, safeY2 = H * 0.80;
+
+      function overlaps(cx, cy, size) {
+        return cx + size > safeX1 && cx < safeX2 &&
+               cy + size > safeY1 && cy < safeY2;
+      }
+
+      const count = 16;
+      const boardSizes = [52, 64, 76, 88, 104];
+      let placed = 0, attempts = 0;
+
+      while (placed < count && attempts < 400) {
+        attempts++;
+        const bs   = boardSizes[Math.floor(Math.random() * boardSizes.length)];
+        const gap  = Math.round(bs * 0.06);
+        const size = bs + gap;
+        const x    = Math.random() * (W - size);
+        const y    = Math.random() * (H - size);
+        if (overlaps(x, y, size)) continue;
+
+        const angle = Math.random() * 360;
+        const board = document.createElement('div');
+        board.className = 'oth-deco-board';
+        board.style.width     = size + 'px';
+        board.style.height    = size + 'px';
+        board.style.left      = x + 'px';
+        board.style.top       = y + 'px';
+        board.style.transform = `rotate(${angle}deg)`;
+        board.style.gap       = gap + 'px';
+
+        for (let i = 0; i < 16; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'oth-deco-cell';
+          const r = Math.random();
+          if (r < 0.4)      cell.style.background = '#1a4a6e';
+          else if (r < 0.8) cell.style.background = '#ffffff';
+          board.appendChild(cell);
+        }
+        container.appendChild(board);
+        placed++;
+      }
+    })();
+
+    // ── TTT Game Logic ────────────────────────────────────────
+    (function () {
+      const screenGame  = document.getElementById('screen-ttt-game');
+      const btnPlay     = document.getElementById('btn-play-ttt');
+      const btnAgain    = document.getElementById('btn-play-again');
+      const btnMenuFrom = document.getElementById('btn-to-ttt-menu');
+      const btnGameBack  = document.getElementById('btn-game-back');
+      const cells       = document.querySelectorAll('.ttt-cell');
+      const statusEl    = document.getElementById('game-status');
+      const timerEl     = document.getElementById('game-timer');
+      const timerDisp   = document.getElementById('timer-display');
+      const overlay     = document.getElementById('game-over-overlay');
+      const overlayMsg  = document.getElementById('game-over-msg');
+
+      const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+      let board, curMark, active, countdown, cInt;
+
+      function sym(m)   { return m === 'X' ? '\u2715' : '\u25cb'; }
+      function clr(m)   { return `hsl(${m === 'X' ? xHue.value : oHue.value}, 80%, 48%)`; }
+      function p1mark() { return p1IsX ? 'X' : 'O'; }
+      function pnum(m)  { return m === p1mark() ? 1 : 2; }
+
+      function startGame() {
+        board   = Array(9).fill(null);
+        active  = true;
+        curMark = p1mark();
+        cells.forEach(c => {
+          c.textContent = '';
+          c.style.color = '';
+          c.classList.remove('taken', 'win-cell', 'x-mark', 'o-mark');
+        });
+        overlay.classList.remove('visible');
+        setStatus();
+        resetTimer();
+      }
+
+      function setStatus() {
+        statusEl.textContent = `Player ${pnum(curMark)} (${sym(curMark)})'s turn`;
+        statusEl.style.color  = clr(curMark);
+      }
+
+      function resetTimer() {
+        clearInterval(cInt);
+        timerEl.classList.remove('urgent', 'ringing');
+        timerEl.style.color       = '';
+        timerEl.style.borderColor = '';
+
+        const lvl = parseInt(timeSlider.value);
+        if (lvl === 0) { timerEl.classList.add('hidden'); return; }
+
+        timerEl.classList.remove('hidden');
+        countdown = parseInt(timeLevels[lvl]);   // strip 's'
+        timerDisp.textContent = countdown;
+
+        cInt = setInterval(() => {
+          countdown--;
+          timerDisp.textContent = countdown;
+          if (countdown <= 5) timerEl.classList.add('urgent');
+          if (countdown <= 0) { clearInterval(cInt); onTimeout(); }
+        }, 1000);
+      }
+
+      function onTimeout() {
+        if (!active) return;
+        active = false;
+
+        timerEl.classList.remove('ringing');
+        timerEl.getBoundingClientRect();
+        timerEl.classList.add('ringing');
+
+        const forfeited = curMark;
+        statusEl.textContent = `Player ${pnum(forfeited)} (${sym(forfeited)}) forfeited!`;
+        statusEl.style.color = '#c0392b';
+
+        setTimeout(() => {
+          curMark = forfeited === 'X' ? 'O' : 'X';
+          active  = true;
+          setStatus();
+          resetTimer();
+        }, 1500);
+      }
+
+      function checkWin() {
+        for (const [a, b, c] of WINS)
+          if (board[a] && board[a] === board[b] && board[a] === board[c])
+            return [a, b, c];
+        return null;
+      }
+
+      function onCell(i) {
+        if (!active || board[i]) return;
+        board[i] = curMark;
+        if (curMark === 'O') {
+          cells[i].innerHTML = `<span class="o-sym">${sym(curMark)}</span>`;
+        } else {
+          cells[i].textContent = sym(curMark);
+        }
+        cells[i].style.color = clr(curMark);
+        cells[i].classList.add('taken', curMark === 'X' ? 'x-mark' : 'o-mark');
+
+        const win = checkWin();
+        if (win) {
+          active = false;
+          clearInterval(cInt);
+          timerEl.classList.add('hidden');
+          win.forEach(j => cells[j].classList.add('win-cell'));
+          showOver(`Player ${pnum(curMark)} (${sym(curMark)}) wins!`);
+          return;
+        }
+
+        if (board.every(v => v)) {
+          active = false;
+          clearInterval(cInt);
+          timerEl.classList.add('hidden');
+          showOver("It's a draw!");
+          return;
+        }
+
+        curMark = curMark === 'X' ? 'O' : 'X';
+        setStatus();
+        resetTimer();
+      }
+
+      function showOver(msg) {
+        overlayMsg.textContent = msg;
+        overlay.classList.add('visible');
+      }
+
+      cells.forEach((c, i) => c.addEventListener('click', () => onCell(i)));
+
+      btnPlay.addEventListener('click', function () {
+        warpIn(screenGame, this);
+        startGame();
+      });
+
+      btnAgain.addEventListener('click', startGame);
+
+      btnMenuFrom.addEventListener('click', function () {
+        clearInterval(cInt);
+        warpOut(screenGame, btnPlay);
+      });
+
+      btnGameBack.addEventListener('click', function () {
+        clearInterval(cInt);
+        warpOut(screenGame, btnPlay);
+      });
+    })();
+
+    // ── Othello Game Logic ────────────────────────────────────
+    (function () {
+      const screenOthGame  = document.getElementById('screen-oth-game');
+      const btnPlayOth     = document.getElementById('btn-play-othello');
+      const btnOthAgain    = document.getElementById('btn-oth-play-again');
+      const btnOthMenu     = document.getElementById('btn-oth-to-menu');
+      const btnOthGBack    = document.getElementById('btn-oth-game-back');
+      const boardEl        = document.getElementById('oth-board');
+      const statusPiece    = document.getElementById('oth-status-piece');
+      const statusText     = document.getElementById('oth-status-text');
+      const scoreEl        = document.getElementById('oth-score');
+      const timerEl        = document.getElementById('oth-game-timer');
+      const timerDisp      = document.getElementById('oth-timer-display');
+      const overlay        = document.getElementById('oth-game-over');
+      const overlayMsg     = document.getElementById('oth-game-over-msg');
+
+      const SIZE = 8;
+      const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+      // 1 = dark (player 1), 2 = light (player 2)
+      let board, cur, active, countdown, cInt;
+      let cells = [];
+
+      // Build the 8x8 cell grid once
+      for (let i = 0; i < 64; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'oth-cell';
+        cell.addEventListener('click', () => onCell(i));
+        boardEl.appendChild(cell);
+        cells.push(cell);
+      }
+
+      function idx(r, c) { return r * SIZE + c; }
+      function rc(i)     { return [Math.floor(i / SIZE), i % SIZE]; }
+
+      function flips(board, r, c, player) {
+        if (board[idx(r, c)] !== 0) return [];
+        const all = [];
+        for (const [dr, dc] of DIRS) {
+          const line = [];
+          let nr = r + dr, nc = c + dc;
+          while (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+            const v = board[idx(nr, nc)];
+            if (v === 0) break;
+            if (v === player) { all.push(...line); break; }
+            line.push(idx(nr, nc));
+            nr += dr; nc += dc;
+          }
+        }
+        return all;
+      }
+
+      function validMoves(board, player) {
+        const moves = [];
+        for (let r = 0; r < SIZE; r++)
+          for (let c = 0; c < SIZE; c++)
+            if (flips(board, r, c, player).length > 0) moves.push(idx(r, c));
+        return moves;
+      }
+
+      function applyMove(board, i, player) {
+        const [r, c] = rc(i);
+        const f = flips(board, r, c, player);
+        board[i] = player;
+        f.forEach(j => board[j] = player);
+      }
+
+      function countScore(board) {
+        let d = 0, l = 0;
+        board.forEach(v => { if (v === 1) d++; else if (v === 2) l++; });
+        return [d, l];
+      }
+
+      function renderBoard() {
+        cells.forEach((cell, i) => {
+          cell.innerHTML = '';
+          cell.classList.remove('oth-hint', 'oth-taken');
+          if (board[i]) {
+            const piece = document.createElement('div');
+            piece.className = 'oth-piece ' + (board[i] === 1 ? 'dark' : 'light');
+            cell.appendChild(piece);
+            cell.classList.add('oth-taken');
+          }
+        });
+      }
+
+      function renderStatus() {
+        statusPiece.className = 'oth-piece ' + (cur === 1 ? 'dark' : 'light');
+        statusPiece.style.cssText = '';
+        statusPiece.style.display = 'inline-block';
+        statusText.textContent = `Player ${cur}'s turn`;
+        statusText.style.color = '';
+        const [d, l] = countScore(board);
+        scoreEl.textContent = `Black ${d}  –  White ${l}`;
+      }
+
+      function startGame() {
+        board = Array(64).fill(0);
+        // Standard starting position
+        board[idx(3,3)] = 2; board[idx(3,4)] = 1;
+        board[idx(4,3)] = 1; board[idx(4,4)] = 2;
+        cur = 1;
+        active = true;
+        overlay.classList.remove('visible');
+        renderBoard();
+        renderStatus();
+        resetTimer();
+      }
+
+      function resetTimer() {
+        clearInterval(cInt);
+        timerEl.classList.remove('urgent', 'ringing');
+        const lvl = parseInt(othTimeSlider.value);
+        if (lvl === 0) { timerEl.classList.add('hidden'); return; }
+        timerEl.classList.remove('hidden');
+        countdown = parseInt(timeLevels[lvl]);
+        timerDisp.textContent = countdown;
+        cInt = setInterval(() => {
+          countdown--;
+          timerDisp.textContent = countdown;
+          if (countdown <= 5) timerEl.classList.add('urgent');
+          if (countdown <= 0) { clearInterval(cInt); onTimeout(); }
+        }, 1000);
+      }
+
+      function onTimeout() {
+        if (!active) return;
+        active = false;
+        timerEl.classList.remove('ringing');
+        timerEl.getBoundingClientRect();
+        timerEl.classList.add('ringing');
+        const forfeited = cur;
+        statusText.textContent = `Player ${forfeited} forfeited!`;
+        statusText.style.color = '#c0392b';
+        setTimeout(() => {
+          cur = forfeited === 1 ? 2 : 1;
+          active = true;
+          renderStatus();
+          resetTimer();
+        }, 1500);
+      }
+
+      function nextTurn() {
+        const opponent = cur === 1 ? 2 : 1;
+        if (validMoves(board, opponent).length > 0) {
+          cur = opponent;
+          renderStatus();
+          resetTimer();
+        } else if (validMoves(board, cur).length > 0) {
+          // current player plays again — pass
+          renderStatus();
+          resetTimer();
+        } else {
+          // no moves for either — game over
+          endGame();
+        }
+      }
+
+      function endGame() {
+        active = false;
+        clearInterval(cInt);
+        timerEl.classList.add('hidden');
+        const [d, l] = countScore(board);
+        let msg;
+        if (d > l)      msg = `Player 1 wins!\nBlack ${d} – White ${l}`;
+        else if (l > d) msg = `Player 2 wins!\nBlack ${d} – White ${l}`;
+        else            msg = `It's a draw!\nBlack ${d} – White ${l}`;
+        overlayMsg.textContent = msg;
+        overlay.classList.add('visible');
+      }
+
+      function onCell(i) {
+        if (!active) return;
+        const f = flips(board, ...rc(i), cur);
+        if (f.length === 0) return;
+        applyMove(board, i, cur);
+        renderBoard();
+        nextTurn();
+      }
+
+      btnPlayOth.addEventListener('click', function () {
+        warpIn(screenOthGame, this);
+        startGame();
+      });
+
+      btnOthAgain.addEventListener('click', startGame);
+
+      btnOthMenu.addEventListener('click', function () {
+        clearInterval(cInt);
+        warpOut(screenOthGame, btnPlayOth);
+      });
+
+      btnOthGBack.addEventListener('click', function () {
+        clearInterval(cInt);
+        warpOut(screenOthGame, btnPlayOth);
+      });
+    })();
+  </script>
+</body>
+</html>
