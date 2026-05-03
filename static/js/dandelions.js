@@ -43,7 +43,7 @@ btnDandelions.addEventListener('click', function () { warpIn(screenDandelions, t
 btnDandeBack.addEventListener('click', function () { warpOut(screenDandelions, btnDandelions); });
 btnDandelionsSettings.addEventListener('click', function () { warpIn(screenDandelionsSettings, this); });
 btnDandSettingsBack.addEventListener('click', function () { warpOut(screenDandelionsSettings, btnDandelionsSettings); });
-btnPlayDandelions.addEventListener('click', function () { location.href = '/dandelions'; });
+if (btnPlayDandelions) btnPlayDandelions.addEventListener('click', function () { location.href = '/dandelions'; });
 
 // ── Dandelion seed decorations ────────────────────────────────────
 (function () {
@@ -576,5 +576,14 @@ btnPlayDandelions.addEventListener('click', function () { location.href = '/dand
   btnDandMainMenu.addEventListener('click', function () {
     stopDandTimer();
     warpOut(screenDandGame, btnPlayDandGame);
+  });
+
+  // ── Rules toggle ──────────────────────────────────────────────
+  const rulesToggle = document.getElementById('dand-rules-toggle');
+  const rulesPanel  = document.getElementById('dand-rules-panel');
+  rulesToggle.addEventListener('click', function () {
+    const open = rulesPanel.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+    this.textContent = open ? '\u2715 Rules' : '? Rules';
   });
 })();

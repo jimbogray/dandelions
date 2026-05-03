@@ -617,6 +617,74 @@
     #dand-game-timer.urgent  { color: #c0392b; border-color: #c0392b; }
     #dand-game-timer.ringing { animation: timer-ring 0.9s ease-out forwards; }
 
+    /* ── Rules panel ──────────────────────────────────────── */
+    #dand-rules {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    #dand-rules-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: #5a9abf;
+      letter-spacing: 0.06em;
+      padding: 6px 16px 10px;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+
+    #dand-rules-toggle:hover { color: #1a4a6e; }
+
+    #dand-rules-panel {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(560px, 96vw);
+      background: #fff;
+      border: 2px solid #5a9abf;
+      border-radius: 14px;
+      padding: 20px 24px 16px;
+      box-shadow: 0 4px 24px rgba(26,74,110,.14);
+      display: none;
+    }
+
+    #dand-rules-panel.open { display: block; }
+
+    #dand-rules-panel h3 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a4a6e;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    #dand-rules-panel ol {
+      padding-left: 1.4em;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    #dand-rules-panel li {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #1a4a6e;
+      line-height: 1.45;
+    }
+
     /* Wind gust canvas */
     #dand-gust-canvas {
       position: absolute;
@@ -1203,6 +1271,22 @@
           <circle cx="100" cy="100" r="6" fill="#1a4a6e"/>
         </svg>
       </div>
+    </div>
+
+    <!-- rules panel -->
+    <div id="dand-rules">
+      <div id="dand-rules-panel">
+        <h3>How to Play</h3>
+        <ol>
+          <li>🌼 <strong>Dandelion player</strong> places one dandelion on any empty cell each round.</li>
+          <li>💨 <strong>Wind player</strong> picks a compass direction — seeds fly from every dandelion in that direction, filling cells until the edge or an occupied cell blocks them.</li>
+          <li>Each direction can only be used <strong>once</strong> per game.</li>
+          <li>The game lasts <strong>7 rounds</strong> or until the board is full.</li>
+          <li>🌼 Dandelion player wins if the <strong>board is completely full</strong> at the end.</li>
+          <li>💨 Wind player wins if <strong>any cell remains empty</strong>.</li>
+        </ol>
+      </div>
+      <button id="dand-rules-toggle" aria-expanded="false" aria-controls="dand-rules-panel">? Rules</button>
     </div>
 
     <!-- game over overlay -->
