@@ -481,6 +481,99 @@
       clip-path: circle(0px at 50% 50%);
     }
 
+    /* ── Dots and Boxes Lobby Screen ───────────────────────── */
+    #screen-dotsandboxes {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #dotsandboxes-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #dotsandboxes-left > * {
+      pointer-events: auto;
+    }
+
+    #dotsandboxes-left h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── Dots and Boxes Settings Screen ─────────────────────────── */
+    #screen-dotsandboxes-settings {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    /* ── Dots and Boxes Game Screen ─────────────────────────────── */
+    #screen-dab-game {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #dab-board {
+      width: min(90vw, 68vh);
+      height: min(90vw, 68vh);
+    }
+
+    #dab-game-over {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(208, 232, 242, 0.88);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 20;
+    }
+
+    #dab-game-over.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .dab-dot { fill: #1a4a6e; }
+
+    .dab-edge-g { cursor: pointer; }
+
+    .dab-edge-g .dab-edge {
+      stroke: #b8d4e8;
+      stroke-width: 3;
+      stroke-linecap: round;
+      fill: none;
+      transition: stroke 0.12s;
+    }
+
+    .dab-edge-g:hover .dab-edge { stroke: #5a9abf; }
+
+    .dab-edge-g.claimed-p1 { cursor: default; }
+    .dab-edge-g.claimed-p1 .dab-edge { stroke: #cc2222; }
+    .dab-edge-g.claimed-p1:hover .dab-edge { stroke: #cc2222; }
+
+    .dab-edge-g.claimed-p2 { cursor: default; }
+    .dab-edge-g.claimed-p2 .dab-edge { stroke: #2563eb; }
+    .dab-edge-g.claimed-p2:hover .dab-edge { stroke: #2563eb; }
+
+    .dab-edge-hit {
+      stroke: transparent;
+      stroke-width: 14;
+      fill: none;
+    }
+
+    .dab-cell-fill { transition: fill 0.18s, fill-opacity 0.18s; }
+
     /* ── Dandelions Game Screen ─────────────────────────────── */
     #screen-dand-game {
       clip-path: circle(0px at 50% 50%);
@@ -1028,6 +1121,7 @@
       <button class="game-btn" id="btn-ttt">Tic Tac Toe</button>
       <button class="game-btn" id="btn-othello">Othello</button>
       <button class="game-btn" id="btn-dandelions">Dandelions</button>
+      <button class="game-btn" id="btn-dotsandboxes">Dots and Boxes</button>
       <a class="game-btn" href="/download" style="font-size:0.78rem;padding:10px 18px;opacity:0.7;text-decoration:none;display:block;text-align:center;">⬇ Download as HTML</a>
     </div>
   </div>
@@ -1425,10 +1519,89 @@
 
   </div>
 
+  <!-- ── Dots and Boxes Lobby ─────────────────────────────────────── -->
+  <div id="screen-dotsandboxes" class="screen">
+    <div id="dotsandboxes-left">
+      <h2>DOTS AND BOXES</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-dotsandboxes">Play</button>
+        <button class="game-btn" id="btn-dotsandboxes-settings">Settings</button>
+        <button class="game-btn" id="btn-dotsandboxes-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dots and Boxes Settings Screen ──────────────────────────────── -->
+  <div id="screen-dotsandboxes-settings" class="screen">
+    <div id="ttt-settings-inner">
+      <h2>DOTS AND BOXES SETTINGS</h2>
+
+      <!-- Board width -->
+      <div class="setting-row">
+        <span class="setting-label" id="dab-width-label">Board Size</span>
+        <input type="range" class="time-slider" id="dab-width-slider" min="4" max="16" value="6" step="1">
+        <div class="time-value" id="dab-width-value">6</div>
+      </div>
+
+      <!-- Board length -->
+      <div class="setting-row" id="dab-length-row">
+        <span class="setting-label">Board Length</span>
+        <input type="range" class="time-slider" id="dab-length-slider" min="4" max="16" value="6" step="1">
+        <div class="time-value" id="dab-length-value">6</div>
+      </div>
+
+      <!-- Shape toggle -->
+      <div class="setting-row">
+        <div class="mode-toggle" id="dab-shape-toggle">
+          <button class="mode-opt selected" data-val="triangle">Triangle</button>
+          <button class="mode-opt" data-val="rectangle">Rectangle</button>
+        </div>
+      </div>
+
+      <div class="game-list">
+        <button class="game-btn" id="btn-dotsandboxes-settings-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dots and Boxes Game Screen ───────────────────────────────── -->
+  <div id="screen-dab-game" class="screen">
+    <button class="settings-btn" id="btn-dab-game-back" aria-label="Back"
+            style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:14px;">
+      <div id="dab-status" style="font-family:'Lexend',sans-serif;font-weight:700;font-size:1.1rem;color:#1a4a6e;">Player 1's turn</div>
+      <div id="dab-score" style="font-family:'Lexend',sans-serif;font-weight:700;font-size:0.95rem;">
+        <span style="color:#1a4a6e">P1: 0</span> &nbsp;|&nbsp; <span style="color:#e07040">P2: 0</span>
+      </div>
+    </div>
+
+    <svg id="dab-board" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <div id="dab-game-over">
+      <div style="background:#fff;border-radius:20px;padding:40px 48px;text-align:center;
+                  box-shadow:0 8px 32px rgba(26,74,110,.18);display:flex;flex-direction:column;
+                  align-items:center;gap:18px;">
+        <div id="dab-over-msg" style="font-family:'Lexend',sans-serif;font-weight:700;
+             font-size:1.5rem;color:#1a4a6e;"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;">
+          <button class="game-btn" id="btn-dab-play-again">Play Again</button>
+          <button class="game-btn" id="btn-dab-main-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
   <script src="{{ url_for('static', filename='js/menu-deco.js') }}"></script>
   <script src="{{ url_for('static', filename='js/ttt.js') }}"></script>
   <script src="{{ url_for('static', filename='js/othello.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dandelions.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dotsandboxes.js') }}"></script>
 </body>
 </html>
