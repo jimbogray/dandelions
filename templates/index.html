@@ -1323,6 +1323,237 @@
       color: #1a4a6e;
       line-height: 1.45;
     }
+
+    /* ── State Capitals Lobby Screen ────────────────────────── */
+    #screen-statecapitals {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #sc-lobby-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #sc-lobby-inner > * { pointer-events: auto; }
+
+    #sc-lobby-inner h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── State Capitals Game Screen ─────────────────────────── */
+    #screen-sc-game {
+      clip-path: circle(0px at 50% 50%);
+      gap: 0;
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding-top: 70px;
+      padding-bottom: 24px;
+    }
+
+    #btn-sc-game-back:hover { transform: none; }
+
+    #sc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 560px;
+      padding: 0 16px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+
+    #sc-progress {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+      color: #5a9abf;
+      letter-spacing: 0.05em;
+    }
+
+    #sc-score-display {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+      color: #1a4a6e;
+      letter-spacing: 0.04em;
+    }
+
+    #sc-card {
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 18px;
+      padding: 32px 28px 28px;
+      width: min(92vw, 520px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 4px 18px rgba(26, 74, 110, 0.10);
+      flex-shrink: 0;
+    }
+
+    #sc-prompt {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: #5a9abf;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    #sc-question {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: #1a4a6e;
+      text-align: center;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+    }
+
+    #sc-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .sc-choice-btn {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      color: #1a4a6e;
+      background: #f0f8ff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 16px 20px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s, box-shadow 0.13s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.07);
+    }
+
+    .sc-choice-btn:hover:not(:disabled) {
+      background: #d8eef8;
+      border-color: #1a4a6e;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 16px rgba(26, 74, 110, 0.13);
+    }
+
+    .sc-choice-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .sc-choice-btn.correct {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    .sc-choice-btn.wrong {
+      background: #f8d7da;
+      border-color: #dc3545;
+      color: #721c24;
+    }
+
+    .sc-choice-btn.reveal-correct {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    #sc-feedback {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: #1a4a6e;
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    #sc-next-btn {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      background: #1a4a6e;
+      border: 2.5px solid #1a4a6e;
+      border-radius: 12px;
+      padding: 14px 36px;
+      cursor: pointer;
+      transition: background 0.13s, transform 0.1s, box-shadow 0.13s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.15);
+    }
+
+    #sc-next-btn:hover {
+      background: #2563a8;
+      border-color: #2563a8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 16px rgba(26, 74, 110, 0.2);
+    }
+
+    #sc-next-btn:disabled {
+      background: #a8c4d8;
+      border-color: #a8c4d8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #sc-exit-btn {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #1a4a6e;
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s, box-shadow 0.13s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    #sc-exit-btn:hover {
+      background: #e8f4fc;
+      border-color: #1a4a6e;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 16px rgba(26, 74, 110, 0.13);
+    }
+
+    #sc-game-over {
+      position: absolute;
+      inset: 0;
+      background: rgba(208, 232, 242, 0.92);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+      z-index: 30;
+    }
+
+    #sc-game-over.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -1339,6 +1570,7 @@
       <button class="game-btn" id="btn-dandelions">Dandelions</button>
       <button class="game-btn" id="btn-dotsandboxes">Dots and Boxes</button>
       <button class="game-btn" id="btn-taxcollector">Tax Collector</button>
+      <button class="game-btn" id="btn-statecapitals">State Capitals</button>
       <a class="game-btn" href="/download" style="font-size:0.78rem;padding:10px 18px;opacity:0.7;text-decoration:none;display:block;text-align:center;">⬇ Download as HTML</a>
     </div>
   </div>
@@ -1814,6 +2046,57 @@
     </div>
   </div>
 
+  <!-- ── State Capitals Lobby ──────────────────────────────────────── -->
+  <div id="screen-statecapitals" class="screen">
+    <div id="sc-lobby-inner">
+      <h2>STATE CAPITALS</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-sc">Play</button>
+        <button class="game-btn" id="btn-sc-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── State Capitals Game Screen ────────────────────────────────── -->
+  <div id="screen-sc-game" class="screen">
+    <button class="settings-btn" id="btn-sc-game-back" aria-label="Back"
+            style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <div id="sc-header">
+      <div id="sc-progress">Question 1 of 50</div>
+      <div id="sc-score-display">Score: 0 / 0</div>
+    </div>
+
+    <div id="sc-card">
+      <div id="sc-prompt">What is the capital of…</div>
+      <div id="sc-question">California</div>
+      <div id="sc-choices"></div>
+      <div id="sc-feedback"></div>
+      <div style="display:flex;gap:12px;">
+        <button id="sc-exit-btn">Exit</button>
+        <button id="sc-next-btn">Next →</button>
+      </div>
+    </div>
+
+    <div id="sc-game-over">
+      <div style="background:#fff;border-radius:20px;padding:40px 48px;text-align:center;
+                  box-shadow:0 8px 32px rgba(26,74,110,.18);display:flex;flex-direction:column;
+                  align-items:center;gap:18px;">
+        <div id="sc-over-msg" style="font-family:'Lexend',sans-serif;font-weight:700;
+             font-size:1.5rem;color:#1a4a6e;line-height:1.5;"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;">
+          <button class="game-btn" id="btn-sc-play-again">Play Again</button>
+          <button class="game-btn" id="btn-sc-main-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Tax Collector Lobby ─────────────────────────────────────── -->
   <div id="screen-taxcollector" class="screen">
     <div id="tc-lobby-inner">
@@ -1891,5 +2174,6 @@
   <script src="{{ url_for('static', filename='js/dandelions.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dotsandboxes.js') }}"></script>
   <script src="{{ url_for('static', filename='js/taxcollector.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/statecapitals.js') }}"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ def download():
     with open(os.path.join(base, 'templates', 'index.html'), 'r', encoding='utf-8') as f:
         html = f.read()
 
-    js_files = ['utils.js', 'menu-deco.js', 'ttt.js', 'othello.js', 'dandelions.js']
+    js_files = ['utils.js', 'menu-deco.js', 'ttt.js', 'othello.js', 'dandelions.js', 'dotsandboxes.js', 'taxcollector.js', 'statecapitals.js']
     scripts = []
     for js_file in js_files:
         with open(os.path.join(base, 'static', 'js', js_file), 'r', encoding='utf-8') as f:
@@ -25,7 +25,7 @@ def download():
     html = re.sub(
         r'\s*<script src="\{\{ url_for\(\'static\', filename=\'js/utils\.js\'\) \}\}"></script>'
         r'.*?'
-        r'<script src="\{\{ url_for\(\'static\', filename=\'js/dandelions\.js\'\) \}\}"></script>',
+        r'<script src="\{\{ url_for\(\'static\', filename=\'js/statecapitals\.js\'\) \}\}"></script>',
         '\n  ' + inline,
         html,
         flags=re.DOTALL,
