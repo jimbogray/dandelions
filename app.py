@@ -4,6 +4,13 @@ from flask import Flask, render_template, Response
 
 app = Flask(__name__)
 
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    return response
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -42,4 +49,4 @@ def page_not_found(e):
     return render_template("404.html"), 404
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1")
