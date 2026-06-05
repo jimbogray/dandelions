@@ -24,9 +24,7 @@ timeValue.textContent = timeLevels[0];
 
 xHue.addEventListener('input', updateXColor);
 oHue.addEventListener('input', updateOColor);
-timeSlider.addEventListener('input', function () {
-  timeValue.textContent = timeLevels[this.value];
-});
+wireTimeSlider(timeSlider, timeValue);
 
 let p1IsX = true;
 firstToggle.addEventListener('click', function () {
@@ -35,51 +33,34 @@ firstToggle.addEventListener('click', function () {
 });
 
 // ── Screen navigation ─────────────────────────────────────────────
-btnTTT.addEventListener('click', function () { warpIn(screenTTT, this); });
-btnBack.addEventListener('click', function () { warpOut(screenTTT, btnTTT); });
-btnTTTSettings.addEventListener('click', function () { warpIn(screenTTTSet, this); });
-btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, btnTTTSettings); });
+wireNav([
+  { btn: btnTTT, screen: screenTTT, backBtn: btnBack },
+  { btn: btnTTTSettings, screen: screenTTTSet, backBtn: btnSettingsBack },
+]);
 
 // ── Decorative scattered TTT boards ──────────────────────────────
 (function () {
-  const container = document.getElementById('ttt-deco');
-  const W = window.innerWidth, H = window.innerHeight;
-  const safeX1 = W * 0.25, safeX2 = W * 0.75;
-  const safeY1 = H * 0.20, safeY2 = H * 0.80;
-
-  function overlaps(cx, cy, size) {
-    return cx + size > safeX1 && cx < safeX2 &&
-           cy + size > safeY1 && cy < safeY2;
-  }
-
-  const count = 18;
   const sizes = [44, 52, 60, 68, 80, 92, 106];
-  let attempts = 0, placed = 0;
-
-  while (placed < count && attempts < 400) {
-    attempts++;
-    const size = sizes[Math.floor(Math.random() * sizes.length)];
-    const x = Math.random() * (W - size);
-    const y = Math.random() * (H - size);
-    if (overlaps(x, y, size)) continue;
-
-    const angle = Math.random() * 360;
-    const board = document.createElement('div');
-    board.className = 'deco-board';
-    board.style.width     = size + 'px';
-    board.style.height    = size + 'px';
-    board.style.left      = x + 'px';
-    board.style.top       = y + 'px';
-    board.style.transform = `rotate(${angle}deg)`;
-
-    for (let i = 0; i < 9; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'deco-cell';
-      board.appendChild(cell);
-    }
-    container.appendChild(board);
-    placed++;
-  }
+  scatterDecorations({
+    container: document.getElementById('ttt-deco'),
+    count: 18,
+    getSize: function () { return sizes[Math.floor(Math.random() * sizes.length)]; },
+    createItem: function (x, y, angle, size) {
+      const board = document.createElement('div');
+      board.className = 'deco-board';
+      board.style.width     = size + 'px';
+      board.style.height    = size + 'px';
+      board.style.left      = x + 'px';
+      board.style.top       = y + 'px';
+      board.style.transform = `rotate(${angle}deg)`;
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'deco-cell';
+        board.appendChild(cell);
+      }
+      return board;
+    },
+  });
 })();
 
 // ── TTT Game Logic ────────────────────────────────────────────────
@@ -97,12 +78,14 @@ btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, bt
   const overlayMsg  = document.getElementById('game-over-msg');
 
   const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  let board, curMark, active, countdown, cInt;
+  let board, curMark, active;
 
   function sym(m)   { return m === 'X' ? '\u2715' : '\u25cb'; }
   function clr(m)   { return `hsl(${m === 'X' ? xHue.value : oHue.value}, 80%, 48%)`; }
   function p1mark() { return p1IsX ? 'X' : 'O'; }
   function pnum(m)  { return m === p1mark() ? 1 : 2; }
+
+  const timer = createTimer(timeSlider, timerEl, timerDisp, onTimeout);
 
   function startGame() {
     board   = Array(9).fill(null);
@@ -113,35 +96,14 @@ btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, bt
       c.style.color = '';
       c.classList.remove('taken', 'win-cell', 'x-mark', 'o-mark');
     });
-    overlay.classList.remove('visible');
+    hideOverlay(overlay);
     setStatus();
-    resetTimer();
+    timer.reset();
   }
 
   function setStatus() {
     statusEl.textContent = `Player ${pnum(curMark)} (${sym(curMark)})'s turn`;
     statusEl.style.color  = clr(curMark);
-  }
-
-  function resetTimer() {
-    clearInterval(cInt);
-    timerEl.classList.remove('urgent', 'ringing');
-    timerEl.style.color       = '';
-    timerEl.style.borderColor = '';
-
-    const lvl = parseInt(timeSlider.value);
-    if (lvl === 0) { timerEl.classList.add('hidden'); return; }
-
-    timerEl.classList.remove('hidden');
-    countdown = parseInt(timeLevels[lvl]);
-    timerDisp.textContent = countdown;
-
-    cInt = setInterval(() => {
-      countdown--;
-      timerDisp.textContent = countdown;
-      if (countdown <= 5) timerEl.classList.add('urgent');
-      if (countdown <= 0) { clearInterval(cInt); onTimeout(); }
-    }, 1000);
   }
 
   function onTimeout() {
@@ -160,7 +122,7 @@ btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, bt
       curMark = forfeited === 'X' ? 'O' : 'X';
       active  = true;
       setStatus();
-      resetTimer();
+      timer.reset();
     }, 1500);
   }
 
@@ -185,29 +147,26 @@ btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, bt
     const win = checkWin();
     if (win) {
       active = false;
-      clearInterval(cInt);
+      timer.stop();
       timerEl.classList.add('hidden');
       win.forEach(j => cells[j].classList.add('win-cell'));
-      showOver(`Player ${pnum(curMark)} (${sym(curMark)}) wins!`);
+      overlayMsg.textContent = `Player ${pnum(curMark)} (${sym(curMark)}) wins!`;
+      showOverlay(overlay);
       return;
     }
 
     if (board.every(v => v)) {
       active = false;
-      clearInterval(cInt);
+      timer.stop();
       timerEl.classList.add('hidden');
-      showOver("It's a draw!");
+      overlayMsg.textContent = "It's a draw!";
+      showOverlay(overlay);
       return;
     }
 
     curMark = curMark === 'X' ? 'O' : 'X';
     setStatus();
-    resetTimer();
-  }
-
-  function showOver(msg) {
-    overlayMsg.textContent = msg;
-    overlay.classList.add('visible');
+    timer.reset();
   }
 
   cells.forEach((c, i) => c.addEventListener('click', () => onCell(i)));
@@ -220,12 +179,12 @@ btnSettingsBack.addEventListener('click', function () { warpOut(screenTTTSet, bt
   btnAgain.addEventListener('click', startGame);
 
   btnMenuFrom.addEventListener('click', function () {
-    clearInterval(cInt);
+    timer.stop();
     warpOut(screenGame, btnPlay);
   });
 
   btnGameBack.addEventListener('click', function () {
-    clearInterval(cInt);
+    timer.stop();
     warpOut(screenGame, btnPlay);
   });
 })();

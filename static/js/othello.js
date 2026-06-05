@@ -8,61 +8,45 @@ const btnOthSettingsBack    = document.getElementById('btn-oth-settings-back');
 const othTimeSlider         = document.getElementById('oth-time-slider');
 const othTimeValue          = document.getElementById('oth-time-value');
 
-othTimeSlider.addEventListener('input', function () {
-  othTimeValue.textContent = timeLevels[this.value];
-});
+wireTimeSlider(othTimeSlider, othTimeValue);
 
-btnOthello.addEventListener('click', function () { warpIn(screenOthello, this); });
-btnOthelloBack.addEventListener('click', function () { warpOut(screenOthello, btnOthello); });
-btnOthelloSettings.addEventListener('click', function () { warpIn(screenOthelloSettings, this); });
-btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthelloSettings, btnOthelloSettings); });
+wireNav([
+  { btn: btnOthello, screen: screenOthello, backBtn: btnOthelloBack },
+  { btn: btnOthelloSettings, screen: screenOthelloSettings, backBtn: btnOthSettingsBack },
+]);
 
 // ── Othello decorative pieces ─────────────────────────────────────
 (function () {
-  const container = document.getElementById('othello-deco');
-  const W = window.innerWidth, H = window.innerHeight;
-  const safeX1 = W * 0.25, safeX2 = W * 0.75;
-  const safeY1 = H * 0.20, safeY2 = H * 0.80;
-
-  function overlaps(cx, cy, size) {
-    return cx + size > safeX1 && cx < safeX2 &&
-           cy + size > safeY1 && cy < safeY2;
-  }
-
-  const count = 16;
   const boardSizes = [52, 64, 76, 88, 104];
-  let placed = 0, attempts = 0;
-
-  while (placed < count && attempts < 400) {
-    attempts++;
-    const bs   = boardSizes[Math.floor(Math.random() * boardSizes.length)];
-    const gap  = Math.round(bs * 0.06);
-    const size = bs + gap;
-    const x    = Math.random() * (W - size);
-    const y    = Math.random() * (H - size);
-    if (overlaps(x, y, size)) continue;
-
-    const angle = Math.random() * 360;
-    const board = document.createElement('div');
-    board.className       = 'oth-deco-board';
-    board.style.width     = size + 'px';
-    board.style.height    = size + 'px';
-    board.style.left      = x + 'px';
-    board.style.top       = y + 'px';
-    board.style.transform = `rotate(${angle}deg)`;
-    board.style.gap       = gap + 'px';
-
-    for (let i = 0; i < 16; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'oth-deco-cell';
-      const r = Math.random();
-      if (r < 0.4)      cell.style.background = '#1a4a6e';
-      else if (r < 0.8) cell.style.background = '#ffffff';
-      board.appendChild(cell);
-    }
-    container.appendChild(board);
-    placed++;
-  }
+  scatterDecorations({
+    container: document.getElementById('othello-deco'),
+    count: 16,
+    getSize: function () {
+      const bs = boardSizes[Math.floor(Math.random() * boardSizes.length)];
+      return bs + Math.round(bs * 0.06);
+    },
+    createItem: function (x, y, angle, size) {
+      const bs  = Math.round(size / 1.06);
+      const gap = size - bs;
+      const board = document.createElement('div');
+      board.className       = 'oth-deco-board';
+      board.style.width     = size + 'px';
+      board.style.height    = size + 'px';
+      board.style.left      = x + 'px';
+      board.style.top       = y + 'px';
+      board.style.transform = `rotate(${angle}deg)`;
+      board.style.gap       = gap + 'px';
+      for (let i = 0; i < 16; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'oth-deco-cell';
+        const r = Math.random();
+        if (r < 0.4)      cell.style.background = '#1a4a6e';
+        else if (r < 0.8) cell.style.background = '#ffffff';
+        board.appendChild(cell);
+      }
+      return board;
+    },
+  });
 })();
 
 // ── Othello Game Logic ────────────────────────────────────────────
@@ -84,7 +68,7 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
   const SIZE = 8;
   const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
   // 1 = dark (player 1), 2 = light (player 2)
-  let board, cur, active, countdown, cInt;
+  let board, cur, active;
   let cells = [];
 
   // Build the 8x8 cell grid once
@@ -160,32 +144,18 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
     scoreEl.textContent = `Black ${d}  \u2013  White ${l}`;
   }
 
+  const timer = createTimer(othTimeSlider, timerEl, timerDisp, onTimeout);
+
   function startGame() {
     board = Array(64).fill(0);
     board[idx(3,3)] = 2; board[idx(3,4)] = 1;
     board[idx(4,3)] = 1; board[idx(4,4)] = 2;
     cur = 1;
     active = true;
-    overlay.classList.remove('visible');
+    hideOverlay(overlay);
     renderBoard();
     renderStatus();
-    resetTimer();
-  }
-
-  function resetTimer() {
-    clearInterval(cInt);
-    timerEl.classList.remove('urgent', 'ringing');
-    const lvl = parseInt(othTimeSlider.value);
-    if (lvl === 0) { timerEl.classList.add('hidden'); return; }
-    timerEl.classList.remove('hidden');
-    countdown = parseInt(timeLevels[lvl]);
-    timerDisp.textContent = countdown;
-    cInt = setInterval(() => {
-      countdown--;
-      timerDisp.textContent = countdown;
-      if (countdown <= 5) timerEl.classList.add('urgent');
-      if (countdown <= 0) { clearInterval(cInt); onTimeout(); }
-    }, 1000);
+    timer.reset();
   }
 
   function onTimeout() {
@@ -201,7 +171,7 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
       cur = forfeited === 1 ? 2 : 1;
       active = true;
       renderStatus();
-      resetTimer();
+      timer.reset();
     }, 1500);
   }
 
@@ -210,10 +180,10 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
     if (validMoves(board, opponent).length > 0) {
       cur = opponent;
       renderStatus();
-      resetTimer();
+      timer.reset();
     } else if (validMoves(board, cur).length > 0) {
       renderStatus();
-      resetTimer();
+      timer.reset();
     } else {
       endGame();
     }
@@ -221,7 +191,7 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
 
   function endGame() {
     active = false;
-    clearInterval(cInt);
+    timer.stop();
     timerEl.classList.add('hidden');
     const [d, l] = countScore(board);
     let msg;
@@ -229,7 +199,7 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
     else if (l > d) msg = `Player 2 wins!\nBlack ${d} \u2013 White ${l}`;
     else            msg = `It's a draw!\nBlack ${d} \u2013 White ${l}`;
     overlayMsg.textContent = msg;
-    overlay.classList.add('visible');
+    showOverlay(overlay);
   }
 
   function onCell(i) {
@@ -249,12 +219,12 @@ btnOthSettingsBack.addEventListener('click', function () { warpOut(screenOthello
   btnOthAgain.addEventListener('click', startGame);
 
   btnOthMenu.addEventListener('click', function () {
-    clearInterval(cInt);
+    timer.stop();
     warpOut(screenOthGame, btnPlayOth);
   });
 
   btnOthGBack.addEventListener('click', function () {
-    clearInterval(cInt);
+    timer.stop();
     warpOut(screenOthGame, btnPlayOth);
   });
 })();

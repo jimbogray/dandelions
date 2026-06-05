@@ -10,66 +10,45 @@ const dandTimeSlider           = document.getElementById('dand-time-slider');
 const dandTimeValue            = document.getElementById('dand-time-value');
 
 // Style pickers
-document.querySelectorAll('#dand-style-picker .style-opt, #seed-style-picker .style-opt').forEach(btn => {
-  btn.addEventListener('click', function () {
-    this.closest('.style-picker').querySelectorAll('.style-opt').forEach(b => b.classList.remove('selected'));
-    this.classList.add('selected');
-  });
-});
+wireToggleGroup('#dand-style-picker .style-opt');
+wireToggleGroup('#seed-style-picker .style-opt');
 
 // Mode toggle
 const dandRoleRow = document.getElementById('dand-role-row');
-document.querySelectorAll('#dand-mode-toggle .mode-opt').forEach(btn => {
-  btn.addEventListener('click', function () {
-    document.querySelectorAll('#dand-mode-toggle .mode-opt').forEach(b => b.classList.remove('selected'));
-    this.classList.add('selected');
-    dandRoleRow.style.display = this.getAttribute('data-val') === 'single' ? '' : 'none';
-  });
+wireToggleGroup('#dand-mode-toggle .mode-opt', function (btn) {
+  dandRoleRow.style.display = btn.getAttribute('data-val') === 'single' ? '' : 'none';
 });
 
 // Role toggle (single player)
-document.querySelectorAll('#dand-role-toggle .mode-opt').forEach(btn => {
-  btn.addEventListener('click', function () {
-    document.querySelectorAll('#dand-role-toggle .mode-opt').forEach(b => b.classList.remove('selected'));
-    this.classList.add('selected');
-  });
-});
+wireToggleGroup('#dand-role-toggle .mode-opt');
 
-dandTimeSlider.addEventListener('input', function () {
-  dandTimeValue.textContent = timeLevels[this.value];
-});
+wireTimeSlider(dandTimeSlider, dandTimeValue);
 
-btnDandelions.addEventListener('click', function () { warpIn(screenDandelions, this); });
-btnDandeBack.addEventListener('click', function () { warpOut(screenDandelions, btnDandelions); });
-btnDandelionsSettings.addEventListener('click', function () { warpIn(screenDandelionsSettings, this); });
-btnDandSettingsBack.addEventListener('click', function () { warpOut(screenDandelionsSettings, btnDandelionsSettings); });
+wireNav([
+  { btn: btnDandelions, screen: screenDandelions, backBtn: btnDandeBack },
+  { btn: btnDandelionsSettings, screen: screenDandelionsSettings, backBtn: btnDandSettingsBack },
+]);
 if (btnPlayDandelions) btnPlayDandelions.addEventListener('click', function () { location.href = '/dandelions'; });
 
 // ── Dandelion seed decorations ────────────────────────────────────
 (function () {
-  const container = document.getElementById('dandelions-deco');
-  const W = window.innerWidth, H = window.innerHeight;
-  const safeX1 = W * 0.25, safeX2 = W * 0.75;
-  const safeY1 = H * 0.20, safeY2 = H * 0.80;
   const seeds = ['\ud83c\udf3c', '\u273f', '\u2740', '\ud83c\udf38', '\u273e', '\u2698'];
-  const count = 28;
-  let placed = 0, attempts = 0;
-  while (placed < count && attempts < 500) {
-    attempts++;
-    const size = 32 + Math.random() * 48;
-    const x = Math.random() * (W - size);
-    const y = Math.random() * (H - size);
-    if (x + size > safeX1 && x < safeX2 && y + size > safeY1 && y < safeY2) continue;
-    const el = document.createElement('span');
-    el.className       = 'dand-deco-seed';
-    el.textContent     = seeds[Math.floor(Math.random() * seeds.length)];
-    el.style.left      = x + 'px';
-    el.style.top       = y + 'px';
-    el.style.fontSize  = size + 'px';
-    el.style.transform = `rotate(${Math.random() * 360}deg)`;
-    container.appendChild(el);
-    placed++;
-  }
+  scatterDecorations({
+    container: document.getElementById('dandelions-deco'),
+    count: 28,
+    maxAttempts: 500,
+    getSize: function () { return 32 + Math.random() * 48; },
+    createItem: function (x, y, angle, size) {
+      const el = document.createElement('span');
+      el.className       = 'dand-deco-seed';
+      el.textContent     = seeds[Math.floor(Math.random() * seeds.length)];
+      el.style.left      = x + 'px';
+      el.style.top       = y + 'px';
+      el.style.fontSize  = size + 'px';
+      el.style.transform = `rotate(${angle}deg)`;
+      return el;
+    },
+  });
 })();
 
 // ── Dandelions Game ───────────────────────────────────────────────
@@ -364,7 +343,7 @@ if (btnPlayDandelions) btnPlayDandelions.addEventListener('click', function () {
       msg = empty === 0 ? '\ud83c\udf3c Dandelion Player Wins!' : '\ud83d\udca8 Wind Player Wins!';
     }
     dandOverMsg.textContent = msg;
-    dandGameOver.classList.add('visible');
+    showOverlay(dandGameOver);
     dandStatus.textContent = 'Game Over';
   }
 
@@ -550,7 +529,7 @@ if (btnPlayDandelions) btnPlayDandelions.addEventListener('click', function () {
     else dandTimerEl.classList.remove('hidden');
     buildBoard();
     buildCompass();
-    dandGameOver.classList.remove('visible');
+    hideOverlay(dandGameOver);
     gctx.clearRect(0, 0, gustCanvas.width, gustCanvas.height);
     updateDandStatus();
     if (activeDandMode === 'single' && isBotTurn()) {
@@ -579,11 +558,8 @@ if (btnPlayDandelions) btnPlayDandelions.addEventListener('click', function () {
   });
 
   // ── Rules toggle ──────────────────────────────────────────────
-  const rulesToggle = document.getElementById('dand-rules-toggle');
-  const rulesPanel  = document.getElementById('dand-rules-panel');
-  rulesToggle.addEventListener('click', function () {
-    const open = rulesPanel.classList.toggle('open');
-    this.setAttribute('aria-expanded', open);
-    this.textContent = open ? '\u2715 Rules' : '? Rules';
-  });
+  wireRulesToggle(
+    document.getElementById('dand-rules-toggle'),
+    document.getElementById('dand-rules-panel')
+  );
 })();
