@@ -78,16 +78,6 @@
   let score = 0;
   let answered = false;
 
-  // ── Fisher-Yates shuffle ──────────────────────────────────────
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
   // ── Pick 2 wrong answers different from correct ───────────────
   function getWrongAnswers(correctCapital) {
     const pool = STATES.filter(s => s.capital !== correctCapital);
@@ -173,7 +163,7 @@
 
     scOverMsg.textContent = `${grade}\nYou got ${score} out of ${total} correct (${pct}%)`;
     scOverMsg.style.whiteSpace = 'pre-line';
-    scGameOver.classList.add('visible');
+    showOverlay(scGameOver);
   }
 
   // ── Start / restart game ──────────────────────────────────────
@@ -181,13 +171,14 @@
     deck = shuffle(STATES);
     currentIdx = 0;
     score = 0;
-    scGameOver.classList.remove('visible');
+    hideOverlay(scGameOver);
     renderQuestion();
   }
 
   // ── Navigation wiring ─────────────────────────────────────────
-  btnSC.addEventListener('click', function () { warpIn(screenSC, this); });
-  btnSCBack.addEventListener('click', function () { warpOut(screenSC, btnSC); });
+  wireNav([
+    { btn: btnSC, screen: screenSC, backBtn: btnSCBack },
+  ]);
 
   btnPlaySC.addEventListener('click', function () {
     warpIn(screenSCGame, this);

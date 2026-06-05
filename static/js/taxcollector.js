@@ -15,10 +15,10 @@ tcCeilingSlider.addEventListener('input', function () {
   tcCeilingValue.textContent = this.value;
 });
 
-btnTaxCollector.addEventListener('click',    function () { warpIn(screenTaxCollector, this); });
-btnTcBack.addEventListener('click',          function () { warpOut(screenTaxCollector, btnTaxCollector); });
-btnTcSettings.addEventListener('click',      function () { warpIn(screenTcSettings, this); });
-btnTcSettingsBack.addEventListener('click',  function () { warpOut(screenTcSettings, btnTcSettings); });
+wireNav([
+  { btn: btnTaxCollector, screen: screenTaxCollector, backBtn: btnTcBack },
+  { btn: btnTcSettings, screen: screenTcSettings, backBtn: btnTcSettingsBack },
+]);
 
 // ── Tax Collector Game ───────────────────────────────────────────
 (function () {
@@ -53,7 +53,7 @@ btnTcSettingsBack.addEventListener('click',  function () { warpOut(screenTcSetti
     tcTaxScore    = 0;
     tcOver        = false;
     tcNums        = [];
-    gameOverEl.classList.remove('visible');
+    hideOverlay(gameOverEl);
 
     for (var i = 1; i <= N; i++) {
       tcNums.push({ n: i, state: 'free' });
@@ -182,15 +182,12 @@ btnTcSettingsBack.addEventListener('click',  function () { warpOut(screenTcSetti
     else
       msg = "It's a draw!<br>" + tcPlayerScore + ' each';
     overMsgEl.innerHTML = msg;
-    gameOverEl.classList.add('visible');
+    showOverlay(gameOverEl);
   }
 
   // ── Rules toggle ──────────────────────────────────────────────
-  var tcRulesToggle = document.getElementById('tc-rules-toggle');
-  var tcRulesPanel  = document.getElementById('tc-rules-panel');
-  tcRulesToggle.addEventListener('click', function () {
-    var open = tcRulesPanel.classList.toggle('open');
-    this.setAttribute('aria-expanded', open);
-    this.textContent = open ? '✕ Rules' : '? Rules';
-  });
+  wireRulesToggle(
+    document.getElementById('tc-rules-toggle'),
+    document.getElementById('tc-rules-panel')
+  );
 })();

@@ -38,18 +38,14 @@ function applyShapeMode(val) {
 
 applyShapeMode('triangle');
 
-document.querySelectorAll('#dab-shape-toggle .mode-opt').forEach(btn => {
-  btn.addEventListener('click', function () {
-    document.querySelectorAll('#dab-shape-toggle .mode-opt').forEach(b => b.classList.remove('selected'));
-    this.classList.add('selected');
-    applyShapeMode(this.getAttribute('data-val'));
-  });
+wireToggleGroup('#dab-shape-toggle .mode-opt', function (btn) {
+  applyShapeMode(btn.getAttribute('data-val'));
 });
 
-btnDotsAndBoxes.addEventListener('click', function () { warpIn(screenDotsAndBoxes, this); });
-btnDotsAndBoxesBack.addEventListener('click', function () { warpOut(screenDotsAndBoxes, btnDotsAndBoxes); });
-btnDotsAndBoxesSettings.addEventListener('click', function () { warpIn(screenDotsAndBoxesSettings, this); });
-btnDotsAndBoxesSettingsBack.addEventListener('click', function () { warpOut(screenDotsAndBoxesSettings, btnDotsAndBoxesSettings); });
+wireNav([
+  { btn: btnDotsAndBoxes, screen: screenDotsAndBoxes, backBtn: btnDotsAndBoxesBack },
+  { btn: btnDotsAndBoxesSettings, screen: screenDotsAndBoxesSettings, backBtn: btnDotsAndBoxesSettingsBack },
+]);
 
 // ── Dots and Boxes Game ───────────────────────────────────────────
 (function () {
@@ -93,7 +89,7 @@ btnDotsAndBoxesSettingsBack.addEventListener('click', function () { warpOut(scre
     dabOver          = false;
     dabEdges         = {};
     dabCells         = [];
-    gameOverEl.classList.remove('visible');
+    hideOverlay(gameOverEl);
 
     if (shape === 'rectangle') buildRect(w, l);
     else                       buildTri(w);
@@ -300,6 +296,6 @@ btnDotsAndBoxesSettingsBack.addEventListener('click', function () { warpOut(scre
     else if (dabScores[1] > dabScores[0]) msg = '🎉 Player 2 wins!';
     else                                  msg = "It's a draw!";
     overMsgEl.textContent = msg;
-    gameOverEl.classList.add('visible');
+    showOverlay(gameOverEl);
   }
 })();
