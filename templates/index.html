@@ -1324,6 +1324,185 @@
       line-height: 1.45;
     }
 
+    /* ── Higher or Lower Lobby Screen ─────────────────────── */
+    #screen-carnival {
+      clip-path: circle(0px at 50% 50%);
+    }
+
+    #carnival-lobby-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #carnival-lobby-inner > * { pointer-events: auto; }
+
+    #carnival-lobby-inner h2 {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4.5vw, 3.6rem);
+      color: #1a4a6e;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 48px;
+      text-shadow: 0 2px 8px rgba(26, 74, 110, 0.12);
+    }
+
+    /* ── Higher or Lower Game Screen ──────────────────────── */
+    #screen-carnival-game {
+      clip-path: circle(0px at 50% 50%);
+      gap: 12px;
+      overflow-y: auto;
+      justify-content: flex-start;
+      padding-top: 68px;
+      padding-bottom: 24px;
+    }
+
+    #btn-carnival-game-back:hover { transform: none; }
+
+    #carnival-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(94vw, 600px);
+      gap: 12px;
+    }
+
+    .carnival-chip {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.86rem, 1.7vw, 1.05rem);
+      color: #1a4a6e;
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 8px 14px;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+      letter-spacing: 0.04em;
+    }
+
+    #carnival-status {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(0.82rem, 1.5vw, 0.98rem);
+      color: #5a9abf;
+      text-align: center;
+      min-height: 1.3em;
+      letter-spacing: 0.06em;
+    }
+
+    #carnival-targets {
+      width: min(94vw, 620px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      background: #fff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 18px;
+      padding: 24px 18px;
+      box-shadow: 0 4px 18px rgba(26, 74, 110, 0.10);
+    }
+
+    #carnival-card {
+      width: min(70vw, 280px);
+      aspect-ratio: 7 / 10;
+      border-radius: 18px;
+      border: 3px solid #5a9abf;
+      background: linear-gradient(165deg, #ffffff 0%, #ecf7fd 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.8rem, 5.2vw, 2.8rem);
+      color: #1a4a6e;
+      letter-spacing: 0.04em;
+      box-shadow: 0 10px 26px rgba(26, 74, 110, 0.16);
+      user-select: none;
+      text-align: center;
+      padding: 10px;
+      line-height: 1.2;
+    }
+
+    #carnival-card.flip {
+      animation: carnival-card-reveal 0.22s ease;
+    }
+
+    @keyframes carnival-card-reveal {
+      0% {
+        transform: scale(0.96);
+        opacity: 0.65;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #carnival-controls {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .carnival-guess-btn {
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #1a4a6e;
+      background: #f0f8ff;
+      border: 2.5px solid #5a9abf;
+      border-radius: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      min-width: 126px;
+      transition: background 0.13s, border-color 0.13s, transform 0.1s, box-shadow 0.13s;
+      box-shadow: 0 2px 8px rgba(26, 74, 110, 0.08);
+    }
+
+    .carnival-guess-btn:hover:not(:disabled) {
+      background: #d8eef8;
+      border-color: #1a4a6e;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 16px rgba(26, 74, 110, 0.13);
+    }
+
+    .carnival-guess-btn:disabled {
+      background: #edf3f8;
+      color: #8aa4b7;
+      border-color: #c0d3e0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #carnival-game-over {
+      position: absolute;
+      inset: 0;
+      background: rgba(208, 232, 242, 0.92);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+      z-index: 30;
+    }
+
+    #carnival-game-over.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     /* ── State Capitals Lobby Screen ────────────────────────── */
     #screen-statecapitals {
       clip-path: circle(0px at 50% 50%);
@@ -1569,6 +1748,7 @@
       <button class="game-btn" id="btn-othello">Othello</button>
       <button class="game-btn" id="btn-dandelions">Dandelions</button>
       <button class="game-btn" id="btn-dotsandboxes">Dots and Boxes</button>
+      <button class="game-btn" id="btn-carnival">Higher or Lower</button>
       <button class="game-btn" id="btn-taxcollector">Tax Collector</button>
       <button class="game-btn" id="btn-statecapitals">State Capitals</button>
     </div>
@@ -2045,6 +2225,55 @@
     </div>
   </div>
 
+  <!-- ── Higher or Lower Lobby ─────────────────────────────────── -->
+  <div id="screen-carnival" class="screen">
+    <div id="carnival-lobby-inner">
+      <h2>HIGHER OR LOWER</h2>
+      <div class="game-list">
+        <button class="game-btn" id="btn-play-carnival">Play</button>
+        <button class="game-btn" id="btn-carnival-back">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Higher or Lower Game Screen ──────────────────────────── -->
+  <div id="screen-carnival-game" class="screen">
+    <button class="settings-btn" id="btn-carnival-game-back" aria-label="Back"
+            style="position:absolute;top:20px;left:24px;right:auto;z-index:10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+
+    <div id="carnival-hud">
+      <div id="carnival-score" class="carnival-chip">Score: 0</div>
+      <div id="carnival-time" class="carnival-chip">Cards left: 51</div>
+    </div>
+
+    <div id="carnival-status">First card is face up. Guess if the next card is higher or lower.</div>
+    <div id="carnival-targets">
+      <div id="carnival-card">?</div>
+      <div id="carnival-controls">
+        <button class="carnival-guess-btn" id="btn-carnival-higher">Higher</button>
+        <button class="carnival-guess-btn" id="btn-carnival-lower">Lower</button>
+      </div>
+    </div>
+
+    <div id="carnival-game-over">
+      <div style="background:#fff;border-radius:20px;padding:40px 48px;text-align:center;
+                  box-shadow:0 8px 32px rgba(26,74,110,.18);display:flex;flex-direction:column;
+                  align-items:center;gap:18px;">
+        <div id="carnival-over-msg" style="font-family:'Lexend',sans-serif;font-weight:700;
+             font-size:1.5rem;color:#1a4a6e;line-height:1.5;"></div>
+        <div style="display:flex;gap:16px;margin-top:8px;">
+          <button class="game-btn" id="btn-carnival-play-again">Play Again</button>
+          <button class="game-btn" id="btn-carnival-main-menu">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── State Capitals Lobby ──────────────────────────────────────── -->
   <div id="screen-statecapitals" class="screen">
     <div id="sc-lobby-inner">
@@ -2174,5 +2403,6 @@
   <script src="{{ url_for('static', filename='js/dotsandboxes.js') }}"></script>
   <script src="{{ url_for('static', filename='js/taxcollector.js') }}"></script>
   <script src="{{ url_for('static', filename='js/statecapitals.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/carnival.js') }}"></script>
 </body>
 </html>
